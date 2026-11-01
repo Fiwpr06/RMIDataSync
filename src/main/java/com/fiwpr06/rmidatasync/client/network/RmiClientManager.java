@@ -42,16 +42,30 @@ public class RmiClientManager {
     }
 
     public synchronized boolean login(String username, String password) {
-        if (!connected || clientService == null) return false;
+        String res = loginDetailed(username, password);
+        return "SUCCESS".equalsIgnoreCase(res);
+    }
+
+    public synchronized String loginDetailed(String username, String password) {
+        if (!connected || clientService == null) return "NOT_CONNECTED";
         try {
-            boolean ok = clientService.login(username, password);
-            if (ok) {
+            String status = clientService.loginDetailed(username, password);
+            if ("SUCCESS".equalsIgnoreCase(status)) {
                 this.loggedInUser = username;
             }
-            return ok;
+            return status;
         } catch (Exception e) {
-            LOGGER.warning("[CLIENT_NET_ERR] Loi goi login(): " + e.getMessage());
-            return false;
+            LOGGER.warning("[CLIENT_NET_ERR] Loi goi loginDetailed(): " + e.getMessage());
+            return "ERROR:" + e.getMessage();
+        }
+    }
+
+    public synchronized void logout() {
+        if (connected && clientService != null && loggedInUser != null) {
+            try {
+                clientService.logout(loggedInUser);
+            } catch (Exception ignored) {}
+            this.loggedInUser = null;
         }
     }
 
@@ -110,6 +124,16 @@ public class RmiClientManager {
         }
     }
 
+    public synchronized boolean adjustStock(String recordId, int delta) {
+        if (!connected || clientService == null) return false;
+        try {
+            return clientService.adjustStock(recordId, delta, loggedInUser != null ? loggedInUser : "User");
+        } catch (Exception e) {
+            LOGGER.warning("[CLIENT_NET_ERR] Loi chinh ton kho: " + e.getMessage());
+            return false;
+        }
+    }
+
     public synchronized NodeInfo getNodeInfo() {
         if (!connected || clientService == null) return null;
         try {
@@ -120,6 +144,7 @@ public class RmiClientManager {
     }
 
     public synchronized void disconnect() {
+        logout();
         connected = false;
         clientService = null;
         loggedInUser = null;
