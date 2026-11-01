@@ -201,18 +201,25 @@ public class RmiServerManager {
     }
 
     public void replicateUserToPeer(User user) {
-        if (!peerConnected) return;
+        if (!running) return;
         asyncTaskPool.submit(() -> {
             try {
                 Registry peerReg = LocateRegistry.getRegistry(peerHost, peerPort);
                 IDataSyncService peerSync = (IDataSyncService) peerReg.lookup("DataSyncService");
-                peerSync.replicateUser(user);
-            } catch (Exception ignored) {}
+                boolean ok = peerSync.replicateUser(user);
+                if (ok) {
+                    syncEventDao.logEvent(SyncAction.REPLICATE, "USER:" + user.getUsername(), user.getFullName(), nodeId, peerHost + ":" + peerPort, "SUCCESS");
+                    LOGGER.info(String.format("[REPLICATE_USER] Da dong bo tai khoan '%s' sang Peer Server thanh cong.", user.getUsername()));
+                    notifyDataChanged();
+                }
+            } catch (Exception e) {
+                LOGGER.info("[REPLICATE_USER] Peer chua san sang (" + e.getMessage() + "). Tai khoan se duoc tu dong dong bo bu khi Peer ket noi.");
+            }
         });
     }
 
     /**
-     * Reconcile: Dong bo bu cac ban ghi chua dong bo khi Peer Server vua online lai
+     * Reconcile: Dong bo bu cac ban ghi va tai khoan nguoi dung khi Peer Server online
      */
     public void reconcileWithPeer() {
         asyncTaskPool.submit(() -> {
@@ -242,7 +249,28 @@ public class RmiServerManager {
                     }
                 }
 
-                LOGGER.info("[RECONCILE] Hoan tat dong bo bu du lieu giua 2 Server.");
+                // 3. Dong bo danh sach tai khoan nguoi dung hai chieu (Bi-directional User Reconciliation)
+                LOGGER.info("[RECONCILE] Bat dau dong bo danh sach tai khoan nguoi dung...");
+                try {
+                    // 3a. Lay tat ca User tu Peer ve Node nay
+                    List<User> peerUsers = peerSync.requestFullUserSync();
+                    if (peerUsers != null) {
+                        for (User pu : peerUsers) {
+                            userDao.saveOrUpdate(pu);
+                        }
+                    }
+                    // 3b. Day tat ca User tu Node nay sang Peer
+                    List<User> localUsers = userDao.getAllUsers();
+                    for (User lu : localUsers) {
+                        peerSync.replicateUser(lu);
+                    }
+                    LOGGER.info(String.format("[RECONCILE] Hoan tat dong bo tai khoan: %d local, %d peer",
+                            localUsers.size(), peerUsers != null ? peerUsers.size() : 0));
+                } catch (Exception ue) {
+                    LOGGER.warning("[RECONCILE_USER_ERR] Loi dong bo tai khoan: " + ue.getMessage());
+                }
+
+                LOGGER.info("[RECONCILE] Hoan tat toan bo tien trinh dong bo bu giua 2 Server.");
                 notifyDataChanged();
             } catch (Exception e) {
                 LOGGER.warning("[RECONCILE_ERR] Loi dong bo bu: " + e.getMessage());

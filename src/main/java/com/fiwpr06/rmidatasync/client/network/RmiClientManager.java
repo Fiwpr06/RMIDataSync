@@ -21,6 +21,7 @@ public class RmiClientManager {
     private int currentPort = 1099;
     private boolean connected = false;
     private String loggedInUser = null;
+    private String loggedInPassword = null;
 
     public synchronized boolean connect(String host, int port) {
         try {
@@ -52,6 +53,7 @@ public class RmiClientManager {
             String status = clientService.loginDetailed(username, password);
             if ("SUCCESS".equalsIgnoreCase(status)) {
                 this.loggedInUser = username;
+                this.loggedInPassword = password;
             }
             return status;
         } catch (Exception e) {
@@ -66,6 +68,7 @@ public class RmiClientManager {
                 clientService.logout(loggedInUser);
             } catch (Exception ignored) {}
             this.loggedInUser = null;
+            this.loggedInPassword = null;
         }
     }
 
@@ -154,4 +157,5 @@ public class RmiClientManager {
     public String getCurrentHost() { return currentHost; }
     public int getCurrentPort() { return currentPort; }
     public String getLoggedInUser() { return loggedInUser; }
+    public String getLoggedInPassword() { return loggedInPassword; }
 }

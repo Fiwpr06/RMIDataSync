@@ -47,7 +47,12 @@ public interface IDataSyncService extends Remote {
     void notifyUserSessionChanged(String username, boolean isOnline, String node) throws RemoteException;
 
     /**
-     * Dong bo tai khoan nguoi dung vua dang ky sang Server doi tac
+     * Dong bo tai khoan nguoi dung vua dang ky hoac cap nhat sang Server doi tac
      */
     boolean replicateUser(User user) throws RemoteException;
+
+    /**
+     * Lay danh sach tat ca tai khoan nguoi dung tu Peer de dong bo bu hai chieu
+     */
+    List<User> requestFullUserSync() throws RemoteException;
 }

@@ -59,6 +59,11 @@ public interface IClientDataService extends Remote {
     boolean adjustStock(String recordId, int delta, String updatedBy) throws RemoteException;
 
     /**
+     * Lay danh sach tat ca nguoi dung (phuc vu quan tri)
+     */
+    List<com.fiwpr06.rmidatasync.shared.model.User> getAllUsers() throws RemoteException;
+
+    /**
      * Lay thong tin Node hien tai
      */
     NodeInfo getNodeInfo() throws RemoteException;

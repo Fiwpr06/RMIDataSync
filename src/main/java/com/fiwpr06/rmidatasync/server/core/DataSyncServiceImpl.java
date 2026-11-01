@@ -90,7 +90,20 @@ public class DataSyncServiceImpl extends UnicastRemoteObject implements IDataSyn
 
     @Override
     public boolean replicateUser(User user) throws RemoteException {
-        LOGGER.info(String.format("[REPLICATION_USER] Nhan tai khoan moi '%s' tu peer", user.getUsername()));
-        return userDao.register(user);
+        LOGGER.info(String.format("[REPLICATION_USER] Nhan tai khoan '%s' tu peer", user.getUsername()));
+        boolean ok = userDao.saveOrUpdate(user);
+        if (ok) {
+            syncEventDao.logEvent(SyncAction.REPLICATE, "USER:" + user.getUsername(), user.getFullName(), "PEER", localNodeId, "SUCCESS");
+            if (serverManager != null) {
+                serverManager.notifyDataChanged();
+            }
+        }
+        return ok;
+    }
+
+    @Override
+    public List<User> requestFullUserSync() throws RemoteException {
+        LOGGER.info(String.format("[RECONCILIATION] Peer Server yeu cau danh sach User tu %s", localNodeId));
+        return userDao.getAllUsers();
     }
 }

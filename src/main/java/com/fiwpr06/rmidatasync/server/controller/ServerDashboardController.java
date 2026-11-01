@@ -4,6 +4,7 @@ import com.fiwpr06.rmidatasync.server.core.RmiServerManager;
 import com.fiwpr06.rmidatasync.shared.model.NodeInfo;
 import com.fiwpr06.rmidatasync.shared.model.RecordItem;
 import com.fiwpr06.rmidatasync.shared.model.SyncEvent;
+import com.fiwpr06.rmidatasync.shared.model.User;
 import com.fiwpr06.rmidatasync.shared.util.AlertHelper;
 import com.fiwpr06.rmidatasync.shared.util.DateTimeUtil;
 import javafx.animation.KeyFrame;
@@ -64,7 +65,15 @@ public class ServerDashboardController implements RmiServerManager.ServerDashboa
     @FXML private TableColumn<SyncEvent, String> colEvStatus;
     @FXML private TableColumn<SyncEvent, String> colEvTime;
 
-    // Tab 3: Console
+    // Tab 3: Users
+    @FXML private TableView<User> tblUsers;
+    @FXML private TableColumn<User, String> colUserUsername;
+    @FXML private TableColumn<User, String> colUserFullName;
+    @FXML private TableColumn<User, String> colUserRole;
+    @FXML private TableColumn<User, String> colUserStatus;
+    @FXML private TableColumn<User, String> colUserNode;
+
+    // Tab 4: Console
     @FXML private TextArea txtConsole;
 
     private RmiServerManager serverManager;
@@ -73,6 +82,7 @@ public class ServerDashboardController implements RmiServerManager.ServerDashboa
 
     private final ObservableList<RecordItem> recordsList = FXCollections.observableArrayList();
     private final ObservableList<SyncEvent> eventsList = FXCollections.observableArrayList();
+    private final ObservableList<User> usersList = FXCollections.observableArrayList();
 
     public void initManager(RmiServerManager manager) {
         this.serverManager = manager;
@@ -88,6 +98,7 @@ public class ServerDashboardController implements RmiServerManager.ServerDashboa
         setupTables();
         refreshRecords();
         refreshEvents();
+        refreshUsers();
         updateStats();
 
         onPeerStatusChanged(manager.isPeerConnected(), manager.getPeerHost(), manager.getPeerPort());
@@ -123,6 +134,18 @@ public class ServerDashboardController implements RmiServerManager.ServerDashboa
         colEvStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
         colEvTime.setCellValueFactory(new PropertyValueFactory<>("timestamp"));
         tblEvents.setItems(eventsList);
+
+        // Users
+        if (tblUsers != null) {
+            colUserUsername.setCellValueFactory(new PropertyValueFactory<>("username"));
+            colUserFullName.setCellValueFactory(new PropertyValueFactory<>("fullName"));
+            colUserRole.setCellValueFactory(new PropertyValueFactory<>("role"));
+            colUserStatus.setCellValueFactory(data -> new SimpleStringProperty(
+                    data.getValue().isOnline() ? "● TRỰC TUYẾN" : "○ NGOẠI TUYẾN"));
+            colUserNode.setCellValueFactory(data -> new SimpleStringProperty(
+                    data.getValue().isOnline() ? data.getValue().getCurrentNode() : "-"));
+            tblUsers.setItems(usersList);
+        }
     }
 
     @FXML
@@ -200,7 +223,22 @@ public class ServerDashboardController implements RmiServerManager.ServerDashboa
     public void handleRefreshAll() {
         refreshRecords();
         refreshEvents();
+        refreshUsers();
         updateStats();
+    }
+
+    @FXML
+    public void handleRefreshUsers() {
+        refreshUsers();
+        showFeedback("✓ Đã làm mới danh sách tài khoản.");
+    }
+
+    private void refreshUsers() {
+        if (serverManager == null || serverManager.getUserDao() == null) return;
+        new Thread(() -> {
+            List<User> users = serverManager.getUserDao().getAllUsers();
+            Platform.runLater(() -> usersList.setAll(users));
+        }).start();
     }
 
     private void refreshRecords() {

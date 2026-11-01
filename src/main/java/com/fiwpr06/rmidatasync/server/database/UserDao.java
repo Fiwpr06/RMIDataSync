@@ -66,6 +66,41 @@ public class UserDao {
         }
     }
 
+    public boolean saveOrUpdate(User user) {
+        String sql = "INSERT INTO users (username, password, full_name, role, is_online, current_node, last_login_time) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?) " +
+                "ON DUPLICATE KEY UPDATE password = VALUES(password), full_name = VALUES(full_name), role = VALUES(role)";
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, user.getUsername());
+            ps.setString(2, user.getPassword());
+            ps.setString(3, user.getFullName());
+            ps.setString(4, user.getRole() != null ? user.getRole() : "USER");
+            ps.setBoolean(5, user.isOnline());
+            ps.setString(6, user.getCurrentNode());
+            ps.setLong(7, user.getLastLoginTime());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean updateUser(User user) {
+        String sql = "UPDATE users SET password = ?, full_name = ?, role = ? WHERE username = ?";
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, user.getPassword());
+            ps.setString(2, user.getFullName());
+            ps.setString(3, user.getRole() != null ? user.getRole() : "USER");
+            ps.setString(4, user.getUsername());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public boolean setSessionState(String username, boolean isOnline, String nodeName) {
         String sql = "UPDATE users SET is_online = ?, current_node = ?, last_login_time = ? WHERE username = ?";
         try (Connection conn = dbManager.getConnection();

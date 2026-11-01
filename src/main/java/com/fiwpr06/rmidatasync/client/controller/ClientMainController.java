@@ -345,14 +345,15 @@ public class ClientMainController {
 
     private void switchServer(String host, int port, String targetNode) {
         String user = clientManager.getLoggedInUser();
+        String pass = clientManager.getLoggedInPassword();
         lblBottomStatus.setText("Đang chuyển kết nối sang " + targetNode + " (" + host + ":" + port + ")...");
         new Thread(() -> {
             // Giai phong phien tai server cu truoc khi sang server moi
             clientManager.logout();
             boolean ok = clientManager.connect(host, port);
-            if (ok && user != null) {
-                // Dang nhap vao server moi
-                clientManager.loginDetailed(user, "123");
+            if (ok && user != null && pass != null) {
+                // Dang nhap vao server moi voi mat khau thuc cua user
+                clientManager.loginDetailed(user, pass);
             }
             Platform.runLater(() -> {
                 if (ok) {

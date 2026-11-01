@@ -154,4 +154,52 @@ public class RmiReplicationTest {
         Assertions.assertNotNull(itemA);
         Assertions.assertEquals(30, itemA.getQuantity(), "Ton kho phai duoc cap nhat len 30 tren Node A sau khi Node B nhap +10!");
     }
+
+    @Test
+    public void testUserAccountBiDirectionalReplicationAndReconciliation() throws Exception {
+        Registry regA = LocateRegistry.getRegistry("127.0.0.1", PORT_A);
+        IClientDataService clientServiceA = (IClientDataService) regA.lookup("ClientDataService");
+
+        Registry regB = LocateRegistry.getRegistry("127.0.0.1", PORT_B);
+        IClientDataService clientServiceB = (IClientDataService) regB.lookup("ClientDataService");
+
+        // 1. Dang ky user moi tren Node A
+        String usernameA = "sync_user_a_" + System.currentTimeMillis();
+        boolean regOkA = clientServiceA.register(usernameA, "Pass@123", "User Created On A");
+        Assertions.assertTrue(regOkA, "Dang ky user tren Node A phai thanh cong");
+
+        // Cho de RMI replicate sang Node B
+        Thread.sleep(1000);
+
+        // Kiem tra Node B phai co user nay va dang nhap duoc voi mat khau that
+        String loginOnB = clientServiceB.loginDetailed(usernameA, "Pass@123");
+        Assertions.assertEquals("SUCCESS", loginOnB, "User dang ky tren Node A phai dang nhap duoc tren Node B!");
+        clientServiceB.logout(usernameA);
+
+        // 2. Dang ky user moi tren Node B
+        String usernameB = "sync_user_b_" + System.currentTimeMillis();
+        boolean regOkB = clientServiceB.register(usernameB, "Secret@456", "User Created On B");
+        Assertions.assertTrue(regOkB, "Dang ky user tren Node B phai thanh cong");
+
+        // Cho de RMI replicate sang Node A
+        Thread.sleep(1000);
+
+        // Kiem tra Node A phai co user nay va dang nhap duoc
+        String loginOnA = clientServiceA.loginDetailed(usernameB, "Secret@456");
+        Assertions.assertEquals("SUCCESS", loginOnA, "User dang ky tren Node B phai dang nhap duoc tren Node A!");
+        clientServiceA.logout(usernameB);
+
+        // 3. Kiem tra tinh nang Reconcile User 2 chieu khi chay reconcileWithPeer
+        nodeA.reconcileWithPeer();
+        Thread.sleep(1500);
+
+        List<com.fiwpr06.rmidatasync.shared.model.User> usersOnA = nodeA.getUserDao().getAllUsers();
+        List<com.fiwpr06.rmidatasync.shared.model.User> usersOnB = nodeB.getUserDao().getAllUsers();
+
+        boolean foundOnA = usersOnA.stream().anyMatch(u -> u.getUsername().equals(usernameB));
+        boolean foundOnB = usersOnB.stream().anyMatch(u -> u.getUsername().equals(usernameA));
+
+        Assertions.assertTrue(foundOnA, "Node A phai co user tao tu Node B");
+        Assertions.assertTrue(foundOnB, "Node B phai co user tao tu Node A");
+    }
 }

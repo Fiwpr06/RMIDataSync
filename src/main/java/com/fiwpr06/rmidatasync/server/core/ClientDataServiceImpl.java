@@ -80,12 +80,24 @@ public class ClientDataServiceImpl extends UnicastRemoteObject implements IClien
     @Override
     public boolean register(String username, String password, String fullName) throws RemoteException {
         LOGGER.info("[CLIENT_RMI] Yeu cau dang ky user moi: " + username);
+        User existing = userDao.getByUsername(username);
+        if (existing != null) {
+            LOGGER.warning("[CLIENT_RMI] Dang ky that bai: Username '" + username + "' da ton tai");
+            return false;
+        }
         User newUser = new User(username, password, fullName, "USER", false, null, 0);
         boolean ok = userDao.register(newUser);
         if (ok) {
+            syncEventDao.logEvent(SyncAction.CREATE, "USER:" + username, fullName, localNodeId, "LOCAL_DB", "CREATED");
             serverManager.replicateUserToPeer(newUser);
+            serverManager.notifyDataChanged();
         }
         return ok;
+    }
+
+    @Override
+    public List<User> getAllUsers() throws RemoteException {
+        return userDao.getAllUsers();
     }
 
     @Override
