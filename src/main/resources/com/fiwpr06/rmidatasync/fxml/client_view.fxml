@@ -6,19 +6,19 @@
 
 <VBox prefHeight="760.0" prefWidth="1200.0" spacing="0.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.fiwpr06.rmidatasync.client.controller.ClientMainController">
     <!-- Top Header Bar -->
-    <HBox styleClass="connect-bar" alignment="CENTER_LEFT" spacing="14.0">
-        <Label text="⚡ RMIDATA SYNC" style="-fx-font-weight: bold; -fx-text-fill: #1E3A8A; -fx-font-size: 15px;" />
+    <HBox styleClass="connect-bar" alignment="CENTER_LEFT" spacing="12.0">
+        <Label text="RMIDATA SYNC" style="-fx-font-weight: bold; -fx-text-fill: #1E3A8A; -fx-font-size: 15px;" minWidth="USE_PREF_SIZE" />
         <Separator orientation="VERTICAL" />
-        <Label fx:id="lblCurrentUser" text="👤 Người dùng: Guest" style="-fx-font-weight: bold; -fx-text-fill: #334155;" />
+        <Label fx:id="lblCurrentUser" text="Người dùng: Guest" style="-fx-font-weight: bold; -fx-text-fill: #334155;" minWidth="USE_PREF_SIZE" />
         <Separator orientation="VERTICAL" />
-        <Label fx:id="lblCurrentServer" text="⚡ Máy chủ: Node A (127.0.0.1:1099)" styleClass="field-label" />
-        <Label fx:id="lblNodeStatus" text="ĐÃ KẾT NỐI" style="-fx-text-fill: #059669; -fx-font-weight: bold; -fx-background-color: #DCFCE7; -fx-padding: 3px 8px; -fx-background-radius: 12px;" />
+        <Label fx:id="lblCurrentServer" text="Máy chủ: Node A" styleClass="field-label" minWidth="USE_PREF_SIZE" />
+        <Label fx:id="lblNodeStatus" text="● Đã kết nối" style="-fx-text-fill: #15803D; -fx-font-weight: bold; -fx-background-color: #DCFCE7; -fx-padding: 3px 10px; -fx-background-radius: 12px;" minWidth="USE_PREF_SIZE" />
         <Region HBox.hgrow="ALWAYS" />
-        <Label text="Chuyển máy chủ kiểm chứng:" styleClass="field-label" />
-        <Button text="Node A (1099)" onAction="#switchToNodeA" styleClass="btn-secondary" />
-        <Button text="Node B (1100)" onAction="#switchToNodeB" styleClass="btn-secondary" />
+        <Label text="Chuyển máy chủ:" styleClass="field-label" minWidth="USE_PREF_SIZE" />
+        <Button text="Máy chủ A" onAction="#switchToNodeA" styleClass="btn-pill" minWidth="USE_PREF_SIZE" />
+        <Button text="Máy chủ B" onAction="#switchToNodeB" styleClass="btn-pill" minWidth="USE_PREF_SIZE" />
         <Separator orientation="VERTICAL" />
-        <Button fx:id="btnLogout" onAction="#handleLogout" styleClass="btn-danger" text="🚪 Đăng xuất" />
+        <Button fx:id="btnLogout" onAction="#handleLogout" styleClass="btn-danger" text="Đăng xuất" minWidth="USE_PREF_SIZE" />
     </HBox>
 
     <!-- Main Workspace SplitPane -->
@@ -29,21 +29,21 @@
                 <Insets top="12" right="12" bottom="12" left="12" />
             </padding>
             <HBox alignment="CENTER_LEFT" spacing="10.0">
-                <Label text="📦 Danh mục Kho Hàng &amp; Sản phẩm:" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #1E3A8A;" />
+                <Label text="Danh mục kho hàng:" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #1E3A8A;" minWidth="USE_PREF_SIZE" />
                 <Region HBox.hgrow="ALWAYS" />
-                <TextField fx:id="txtSearch" prefWidth="280.0" promptText="🔍 Tìm theo mã SP, tên, danh mục..." styleClass="text-input-field" />
-                <Button onAction="#handleRefresh" styleClass="btn-secondary" text="🔄 Làm mới" />
+                <TextField fx:id="txtSearch" prefWidth="280.0" promptText="Tìm theo mã sản phẩm, tên, phân loại..." styleClass="text-input-field" HBox.hgrow="ALWAYS" />
+                <Button onAction="#handleRefresh" styleClass="btn-secondary" text="Làm mới" minWidth="USE_PREF_SIZE" />
             </HBox>
             <TableView fx:id="tblRecords" VBox.vgrow="ALWAYS">
                 <columns>
-                    <TableColumn fx:id="colId" minWidth="90.0" prefWidth="95.0" text="Mã SP" />
-                    <TableColumn fx:id="colTitle" minWidth="200.0" prefWidth="260.0" text="Tên sản phẩm / Thiết bị" />
+                    <TableColumn fx:id="colId" minWidth="85.0" prefWidth="90.0" text="Mã SP" />
+                    <TableColumn fx:id="colTitle" minWidth="200.0" prefWidth="250.0" text="Tên sản phẩm" />
                     <TableColumn fx:id="colCategory" minWidth="100.0" prefWidth="120.0" text="Phân loại" />
-                    <TableColumn fx:id="colPrice" minWidth="110.0" prefWidth="125.0" text="Đơn giá" />
+                    <TableColumn fx:id="colPrice" minWidth="110.0" prefWidth="120.0" text="Đơn giá" />
                     <TableColumn fx:id="colQuantity" minWidth="75.0" prefWidth="80.0" text="Tồn kho" />
                     <TableColumn fx:id="colStatus" minWidth="85.0" prefWidth="95.0" text="Trạng thái" />
                     <TableColumn fx:id="colVersion" minWidth="65.0" prefWidth="70.0" text="Phiên bản" />
-                    <TableColumn fx:id="colOrigin" minWidth="80.0" prefWidth="90.0" text="Node gốc" />
+                    <TableColumn fx:id="colOrigin" minWidth="80.0" prefWidth="85.0" text="Máy chủ tạo" />
                     <TableColumn fx:id="colLastModified" minWidth="140.0" prefWidth="160.0" text="Cập nhật gần nhất" />
                 </columns>
                 <columnResizePolicy>
@@ -57,79 +57,80 @@
             <padding>
                 <Insets top="14" right="16" bottom="14" left="16" />
             </padding>
-            <Label text="⚙️ CAN THIỆP &amp; ĐIỀU CHỈNH DỮ LIỆU KHO" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #1E3A8A;" />
-            <Label text="Mọi thao tác thay đổi dữ liệu sẽ được kích hoạt đồng bộ RMI tức thời sang Server còn lại." styleClass="panel-desc" wrapText="true" />
+            <Label text="ĐIỀU CHỈNH DỮ LIỆU KHO" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #1E3A8A;" minWidth="USE_PREF_SIZE" />
+            <Label text="Mọi thay đổi dữ liệu sẽ được tự động đồng bộ RMI tức thời sang máy chủ còn lại." styleClass="panel-desc" wrapText="true" />
 
             <Separator />
 
             <!-- Quick Stock Adjust Bar -->
             <VBox spacing="6.0" style="-fx-background-color: #F8FAFC; -fx-border-color: #E2E8F0; -fx-border-radius: 6px; -fx-padding: 8px;">
-                <Label text="⚡ Thao tác nhanh số lượng kho (Demo đồng bộ tức thời):" styleClass="field-label" />
+                <Label text="Thao tác nhanh số lượng tồn kho:" styleClass="field-label" minWidth="USE_PREF_SIZE" />
                 <HBox spacing="10.0" alignment="CENTER_LEFT">
-                    <Button onAction="#handleStockPlus10" text="📦 Nhập kho (+10)" styleClass="btn-stock-plus" HBox.hgrow="ALWAYS" />
-                    <Button onAction="#handleStockMinus1" text="📤 Xuất kho (-1)" styleClass="btn-stock-minus" HBox.hgrow="ALWAYS" />
+                    <Button onAction="#handleStockPlus10" text="+ Nhập 10" styleClass="btn-stock-plus" HBox.hgrow="ALWAYS" maxWidth="Infinity" minWidth="USE_PREF_SIZE" />
+                    <Button onAction="#handleStockMinus1" text="− Xuất 1" styleClass="btn-stock-minus" HBox.hgrow="ALWAYS" maxWidth="Infinity" minWidth="USE_PREF_SIZE" />
                 </HBox>
             </VBox>
 
             <!-- Form Fields -->
             <VBox spacing="4.0">
-                <Label text="Mã sản phẩm (ID):" styleClass="field-label" />
+                <Label text="Mã sản phẩm:" styleClass="field-label" minWidth="USE_PREF_SIZE" />
                 <TextField fx:id="txtRecordId" promptText="Tự động tạo nếu để trống (ví dụ: SP-105)" styleClass="text-input-field" />
             </VBox>
 
             <VBox spacing="4.0">
-                <Label text="Tên sản phẩm / Tiêu đề:" styleClass="field-label" />
+                <Label text="Tên sản phẩm:" styleClass="field-label" minWidth="USE_PREF_SIZE" />
                 <TextField fx:id="txtRecordTitle" promptText="Nhập tên sản phẩm..." styleClass="text-input-field" />
             </VBox>
 
             <HBox spacing="10.0">
                 <VBox spacing="4.0" HBox.hgrow="ALWAYS">
-                    <Label text="Danh mục:" styleClass="field-label" />
+                    <Label text="Phân loại:" styleClass="field-label" minWidth="USE_PREF_SIZE" />
                     <TextField fx:id="txtRecordCategory" promptText="Máy tính / Phụ kiện..." styleClass="text-input-field" />
                 </VBox>
-                <VBox spacing="4.0" prefWidth="120.0">
-                    <Label text="Tồn kho:" styleClass="field-label" />
+                <VBox spacing="4.0" prefWidth="120.0" minWidth="100.0">
+                    <Label text="Tồn kho:" styleClass="field-label" minWidth="USE_PREF_SIZE" />
                     <TextField fx:id="txtRecordQuantity" promptText="0" text="0" styleClass="text-input-field" />
                 </VBox>
             </HBox>
 
             <HBox spacing="10.0">
                 <VBox spacing="4.0" HBox.hgrow="ALWAYS">
-                    <Label text="Đơn giá (VNĐ):" styleClass="field-label" />
+                    <Label text="Đơn giá:" styleClass="field-label" minWidth="USE_PREF_SIZE" />
                     <TextField fx:id="txtRecordPrice" promptText="0" text="0" styleClass="text-input-field" />
                 </VBox>
-                <VBox spacing="4.0" prefWidth="120.0">
-                    <Label text="Tình trạng:" styleClass="field-label" />
-                    <ComboBox fx:id="cmbRecordStatus" prefWidth="120.0" />
+                <VBox spacing="4.0" prefWidth="130.0" minWidth="110.0">
+                    <Label text="Trạng thái:" styleClass="field-label" minWidth="USE_PREF_SIZE" />
+                    <ComboBox fx:id="cmbRecordStatus" maxWidth="Infinity" />
                 </VBox>
             </HBox>
 
             <VBox spacing="4.0">
                 <HBox alignment="CENTER_LEFT">
-                    <Label text="Nguồn gốc bản ghi:" styleClass="field-label" />
+                    <Label text="Máy chủ khởi tạo:" styleClass="field-label" minWidth="USE_PREF_SIZE" />
                     <Region HBox.hgrow="ALWAYS" />
-                    <Label fx:id="lblRecordOrigin" text="-" style="-fx-text-fill: #0284C7; -fx-font-weight: bold;" />
+                    <Label fx:id="lblRecordOrigin" text="-" styleClass="hud-value-cyan" minWidth="USE_PREF_SIZE" />
                 </HBox>
             </VBox>
 
             <VBox spacing="4.0" VBox.vgrow="ALWAYS">
-                <Label text="Mô tả chi tiết cấu hình / Ghi chú:" styleClass="field-label" />
-                <TextArea fx:id="txtRecordContent" promptText="Thông số kỹ thuật, bảo hành, vị trí kho..." wrapText="true" VBox.vgrow="ALWAYS" />
+                <Label text="Thông tin ghi chú:" styleClass="field-label" minWidth="USE_PREF_SIZE" />
+                <TextArea fx:id="txtRecordContent" promptText="Mô tả kỹ thuật hoặc ghi chú kho..." wrapText="true" VBox.vgrow="ALWAYS" styleClass="text-input-field" prefHeight="70.0" />
             </VBox>
 
-            <!-- Buttons Action Group -->
-            <HBox spacing="8.0" alignment="CENTER_LEFT">
-                <Button onAction="#handleNewRecord" text="➕ Mới" styleClass="btn-secondary" />
-                <Button onAction="#handleClearForm" text="🧹 Xóa form" styleClass="btn-secondary" />
-                <Region HBox.hgrow="ALWAYS" />
-                <Button onAction="#handleDeleteRecord" text="🗑 Xóa SP" styleClass="btn-danger" />
-                <Button onAction="#handleSaveRecord" text="💾 Lưu sản phẩm" styleClass="btn-primary" />
+            <!-- Action Buttons -->
+            <HBox spacing="8.0" alignment="CENTER_RIGHT">
+                <Button onAction="#handleNewRecord" text="Thêm mới" styleClass="btn-secondary" minWidth="USE_PREF_SIZE" />
+                <Button onAction="#handleSaveRecord" text="Lưu thay đổi" styleClass="btn-primary" minWidth="USE_PREF_SIZE" />
+                <Button onAction="#handleDeleteRecord" text="Xóa" styleClass="btn-danger" minWidth="USE_PREF_SIZE" />
             </HBox>
         </VBox>
     </SplitPane>
 
     <!-- Bottom Status Bar -->
-    <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="status-bar">
-        <Label fx:id="lblBottomStatus" text="Hệ thống phân tán sẵn sàng." styleClass="field-label" />
+    <HBox styleClass="footer-bar" alignment="CENTER_LEFT" spacing="10">
+        <padding>
+            <Insets top="6" right="16" bottom="6" left="16" />
+        </padding>
+        <Label fx:id="lblBottomStatus" text="Hệ thống sẵn sàng" styleClass="footer-text" HBox.hgrow="ALWAYS" />
     </HBox>
 </VBox>
