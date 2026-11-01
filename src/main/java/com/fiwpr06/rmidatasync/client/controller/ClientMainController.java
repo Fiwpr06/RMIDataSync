@@ -377,7 +377,7 @@ public class ClientMainController {
             Parent root = loader.load();
             Stage stage = (Stage) btnLogout.getScene().getWindow();
             stage.getScene().setRoot(root);
-            stage.setTitle("⚡ RMIDataSync - Authentication & Server Selection");
+            stage.setTitle("RMIDataSync - Đăng nhập và chọn máy chủ");
             stage.setWidth(740);
             stage.setHeight(580);
             stage.centerOnScreen();

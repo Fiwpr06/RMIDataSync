@@ -161,6 +161,10 @@
 
 /* ================= BUTTONS ================= */
 
+.btn-primary, .btn-secondary, .btn-action, .btn-danger, .btn-utility, .btn-pill {
+    -fx-min-width: -1;
+}
+
 .btn-primary {
     -fx-background-color: #2563EB;
     -fx-text-fill: #FFFFFF;
