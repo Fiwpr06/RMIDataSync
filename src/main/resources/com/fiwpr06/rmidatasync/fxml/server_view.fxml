@@ -4,90 +4,115 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox prefHeight="720.0" prefWidth="1000.0" spacing="0.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.fiwpr06.rmidatasync.server.controller.ServerDashboardController">
+<VBox prefHeight="760.0" prefWidth="1180.0" spacing="0.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.fiwpr06.rmidatasync.server.controller.ServerDashboardController">
     <!-- Header HUD Bar -->
-    <HBox styleClass="hud-bar">
-        <Label fx:id="lblNodeTitle" styleClass="hud-title" text="⚡ RMI NODE DASHBOARD (NODE A)" />
+    <HBox alignment="CENTER_LEFT" spacing="14.0" styleClass="hud-bar">
+        <Label fx:id="lblNodeTitle" styleClass="hud-title" text="⚡ RMI NODE DASHBOARD (NODE_A)" />
+        <Separator orientation="VERTICAL" />
+        <Label text="Node Cục bộ:" styleClass="hud-label" />
+        <Label fx:id="lblLocalInfo" text="127.0.0.1:1099" styleClass="hud-value-cyan" />
+        <Separator orientation="VERTICAL" />
+        <Label text="Đối tác:" styleClass="hud-label" />
+        <Label fx:id="lblPeerInfo" text="127.0.0.1:1100" styleClass="hud-value-green" />
         <Region HBox.hgrow="ALWAYS" />
-        <Label text="Local Host:" style="-fx-text-fill: #94A3B8;" />
-        <Label fx:id="lblLocalInfo" text="127.0.0.1:1099" style="-fx-text-fill: #00D2E6; -fx-font-weight: bold;" />
-        <Separator orientation="VERTICAL" />
-        <Label text="Peer Server:" style="-fx-text-fill: #94A3B8;" />
-        <Label fx:id="lblPeerInfo" text="127.0.0.1:1100" style="-fx-text-fill: #E2E8F0;" />
-        <Label fx:id="lblPeerBadge" styleClass="peer-badge-offline" text="PEER OFFLINE" />
-        <Separator orientation="VERTICAL" />
-        <Button fx:id="btnForceSync" onAction="#handleForceReconcile" styleClass="btn-primary" text="🔄 Reconcile Sync" />
+        <Label fx:id="lblPeerBadge" styleClass="badge-offline" text="🔴 PEER OFFLINE - ĐANG CHỜ MÁY ĐỐI TÁC" />
     </HBox>
 
-    <!-- Stat Overview Cards -->
-    <HBox spacing="16.0" style="-fx-background-color: #0B0E14; -fx-padding: 14px 16px 6px 16px;">
+    <!-- Interactive Peer Configuration & Action Bar -->
+    <HBox alignment="CENTER_LEFT" spacing="12.0" style="-fx-background-color: #FFFFFF; -fx-border-color: #E2E8F0; -fx-border-width: 0 0 1px 0; -fx-padding: 10px 20px;">
+        <Label text="⚙️ CẤU HÌNH MÁY ĐỐI TÁC (PEER SERVER):" style="-fx-font-weight: bold; -fx-text-fill: #1E3A8A; -fx-font-size: 12px;" />
+        <Label text="IP Đối tác:" styleClass="hud-label" />
+        <TextField fx:id="txtPeerHost" prefWidth="180.0" promptText="127.0.0.1 (hoặc IP máy thực B)" text="127.0.0.1" />
+        <Label text="Port:" styleClass="hud-label" />
+        <TextField fx:id="txtPeerPort" prefWidth="75.0" promptText="1100" text="1100" />
+        <Button fx:id="btnUpdatePeer" onAction="#handleUpdatePeer" text="🔗 Áp dụng &amp; Kết nối lại" styleClass="btn-primary" />
+        <Button fx:id="btnForceSync" disable="true" onAction="#handleForceReconcile" text="🔄 Đồng bộ bù (Reconcile)" styleClass="btn-action" />
+        <Region HBox.hgrow="ALWAYS" />
+        <Button onAction="#handleRefreshAll" text="🔄 Tải lại số liệu" styleClass="btn-secondary" />
+    </HBox>
+
+    <!-- Data Overview Stats Cards -->
+    <HBox spacing="16.0" style="-fx-background-color: #F8FAFC; -fx-padding: 14px 20px;">
         <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
-            <Label styleClass="stat-label" text="TOTAL MYSQL RECORDS" />
-            <Label fx:id="lblTotalRecords" styleClass="stat-value" text="0" />
+            <Label styleClass="stat-card-title" text="TỔNG SẢN PHẨM TRONG KHO" />
+            <Label fx:id="lblTotalRecords" styleClass="stat-card-number" text="0" />
         </VBox>
         <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
-            <Label styleClass="stat-label" text="SYNCED WITH PEER" />
-            <Label fx:id="lblSyncedRecords" styleClass="stat-value" text="0" style="-fx-text-fill: #2EE68A;" />
+            <Label styleClass="stat-card-title" text="ĐÃ ĐỒNG BỘ 2 CHIỀU (SYNCED)" />
+            <Label fx:id="lblSyncedRecords" styleClass="stat-card-number-green" text="0" />
         </VBox>
         <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
-            <Label styleClass="stat-label" text="PENDING / QUEUED REPLICATION" />
-            <Label fx:id="lblPendingRecords" styleClass="stat-value" text="0" style="-fx-text-fill: #FF3B56;" />
+            <Label styleClass="stat-card-title" text="ĐANG CHỜ BÙ DỮ LIỆU (PENDING)" />
+            <Label fx:id="lblPendingRecords" styleClass="stat-card-number-orange" text="0" />
         </VBox>
     </HBox>
 
     <!-- Main Content Tabs -->
-    <TabPane tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS" style="-fx-padding: 10px 16px 16px 16px;">
-        <!-- Tab 1: Records Table -->
-        <Tab text="MySQL Node Database">
+    <TabPane tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+        <!-- Tab 1: Records -->
+        <Tab text="Kho Hàng Phân tán (MySQL records)">
             <VBox spacing="10.0">
-                <padding><Insets bottom="10.0" left="10.0" right="10.0" top="10.0" /></padding>
+                <padding>
+                    <Insets bottom="14.0" left="16.0" right="16.0" top="14.0" />
+                </padding>
                 <HBox alignment="CENTER_LEFT" spacing="10.0">
-                    <Label text="Table: records" style="-fx-font-weight: bold; -fx-text-fill: #00D2E6;" />
+                    <Label text="Dữ liệu Kho Hàng thực tế trên cơ sở dữ liệu MySQL của Node hiện tại:" style="-fx-font-weight: bold; -fx-text-fill: #1E3A8A;" />
                     <Region HBox.hgrow="ALWAYS" />
-                    <Button onAction="#refreshRecords" styleClass="btn-secondary" text="🔄 Reload Records" />
+                    <Label text="Tự động đồng bộ hóa đa máy chủ qua RMI" style="-fx-text-fill: #64748B; -fx-font-style: italic;" />
                 </HBox>
                 <TableView fx:id="tblRecords" VBox.vgrow="ALWAYS">
                     <columns>
-                        <TableColumn fx:id="colRecId" prefWidth="120.0" text="Record ID" />
-                        <TableColumn fx:id="colRecTitle" prefWidth="220.0" text="Title" />
-                        <TableColumn fx:id="colRecCategory" prefWidth="110.0" text="Category" />
-                        <TableColumn fx:id="colRecVersion" prefWidth="70.0" text="Version" />
-                        <TableColumn fx:id="colRecOrigin" prefWidth="100.0" text="Origin Node" />
-                        <TableColumn fx:id="colRecSynced" prefWidth="90.0" text="Synced?" />
-                        <TableColumn fx:id="colRecTime" prefWidth="180.0" text="Last Modified" />
+                        <TableColumn fx:id="colRecId" minWidth="90.0" prefWidth="95.0" text="Mã SP" />
+                        <TableColumn fx:id="colRecTitle" minWidth="200.0" prefWidth="260.0" text="Tên sản phẩm" />
+                        <TableColumn fx:id="colRecCategory" minWidth="100.0" prefWidth="120.0" text="Phân loại" />
+                        <TableColumn fx:id="colRecPrice" minWidth="110.0" prefWidth="125.0" text="Đơn giá" />
+                        <TableColumn fx:id="colRecQuantity" minWidth="75.0" prefWidth="80.0" text="Tồn kho" />
+                        <TableColumn fx:id="colRecStatus" minWidth="85.0" prefWidth="95.0" text="Trạng thái" />
+                        <TableColumn fx:id="colRecVersion" minWidth="65.0" prefWidth="70.0" text="Version" />
+                        <TableColumn fx:id="colRecOrigin" minWidth="80.0" prefWidth="90.0" text="Node tạo" />
+                        <TableColumn fx:id="colRecSynced" minWidth="100.0" prefWidth="110.0" text="Đồng bộ" />
+                        <TableColumn fx:id="colRecTime" minWidth="140.0" prefWidth="160.0" text="Thời gian sửa đổi" />
                     </columns>
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                    </columnResizePolicy>
                 </TableView>
             </VBox>
         </Tab>
 
-        <!-- Tab 2: Sync Events History -->
-        <Tab text="RMI Replication Event Logs">
+        <!-- Tab 2: Events -->
+        <Tab text="Lịch sử Đồng bộ RMI (MySQL sync_events)">
             <VBox spacing="10.0">
-                <padding><Insets bottom="10.0" left="10.0" right="10.0" top="10.0" /></padding>
+                <padding>
+                    <Insets bottom="14.0" left="16.0" right="16.0" top="14.0" />
+                </padding>
                 <HBox alignment="CENTER_LEFT" spacing="10.0">
-                    <Label text="Table: sync_events" style="-fx-font-weight: bold; -fx-text-fill: #00D2E6;" />
-                    <Region HBox.hgrow="ALWAYS" />
-                    <Button onAction="#refreshEvents" styleClass="btn-secondary" text="🔄 Reload Events" />
+                    <Label text="Nhật ký các sự kiện nhân bản dữ liệu (Replication / Delete / Reconcile):" style="-fx-font-weight: bold; -fx-text-fill: #1E3A8A;" />
                 </HBox>
                 <TableView fx:id="tblEvents" VBox.vgrow="ALWAYS">
                     <columns>
-                        <TableColumn fx:id="colEvId" prefWidth="60.0" text="ID" />
-                        <TableColumn fx:id="colEvType" prefWidth="110.0" text="Action" />
-                        <TableColumn fx:id="colEvRecId" prefWidth="120.0" text="Record ID" />
-                        <TableColumn fx:id="colEvTitle" prefWidth="220.0" text="Record Title" />
-                        <TableColumn fx:id="colEvSource" prefWidth="100.0" text="Source" />
-                        <TableColumn fx:id="colEvTarget" prefWidth="130.0" text="Target Node" />
-                        <TableColumn fx:id="colEvStatus" prefWidth="100.0" text="Status" />
-                        <TableColumn fx:id="colEvTime" prefWidth="160.0" text="Timestamp" />
+                        <TableColumn fx:id="colEvId" minWidth="50.0" prefWidth="60.0" text="ID" />
+                        <TableColumn fx:id="colEvType" minWidth="100.0" prefWidth="120.0" text="Loại sự kiện" />
+                        <TableColumn fx:id="colEvRecId" minWidth="90.0" prefWidth="100.0" text="Mã SP" />
+                        <TableColumn fx:id="colEvTitle" minWidth="180.0" prefWidth="250.0" text="Tiêu đề bản ghi" />
+                        <TableColumn fx:id="colEvSource" minWidth="100.0" prefWidth="120.0" text="Nguồn phát" />
+                        <TableColumn fx:id="colEvTarget" minWidth="120.0" prefWidth="150.0" text="Đích nhận" />
+                        <TableColumn fx:id="colEvStatus" minWidth="90.0" prefWidth="110.0" text="Trạng thái" />
+                        <TableColumn fx:id="colEvTime" minWidth="140.0" prefWidth="160.0" text="Thời điểm" />
                     </columns>
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                    </columnResizePolicy>
                 </TableView>
             </VBox>
         </Tab>
 
-        <!-- Tab 3: Node Console -->
-        <Tab text="Real-time RMI Console">
-            <VBox spacing="8.0">
-                <padding><Insets bottom="10.0" left="10.0" right="10.0" top="10.0" /></padding>
+        <!-- Tab 3: Console -->
+        <Tab text="Console Log máy chủ">
+            <VBox spacing="10.0">
+                <padding>
+                    <Insets bottom="14.0" left="16.0" right="16.0" top="14.0" />
+                </padding>
                 <TextArea fx:id="txtConsole" editable="false" styleClass="console-area" wrapText="true" VBox.vgrow="ALWAYS" />
             </VBox>
         </Tab>

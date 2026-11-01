@@ -1,5 +1,6 @@
 package com.fiwpr06.rmidatasync.server.core;
 
+import com.fiwpr06.rmidatasync.server.database.DatabaseConfig;
 import com.fiwpr06.rmidatasync.server.database.RecordDao;
 import com.fiwpr06.rmidatasync.server.database.RmiDatabaseManager;
 import com.fiwpr06.rmidatasync.server.database.SyncEventDao;
@@ -7,6 +8,7 @@ import com.fiwpr06.rmidatasync.server.database.UserDao;
 import com.fiwpr06.rmidatasync.shared.model.NodeInfo;
 import com.fiwpr06.rmidatasync.shared.model.RecordItem;
 import com.fiwpr06.rmidatasync.shared.model.SyncAction;
+import com.fiwpr06.rmidatasync.shared.model.User;
 import com.fiwpr06.rmidatasync.shared.rmi.IDataSyncService;
 import com.fiwpr06.rmidatasync.shared.util.NetworkUtil;
 
@@ -38,8 +40,8 @@ public class RmiServerManager {
 
     private final String nodeId;
     private final int localPort;
-    private final String peerHost;
-    private final int peerPort;
+    private volatile String peerHost;
+    private volatile int peerPort;
     private final String dbName;
 
     private RmiDatabaseManager dbManager;
@@ -74,7 +76,9 @@ public class RmiServerManager {
         if (running) return true;
 
         // 1. Khoi tao CSDL MySQL cho Node
-        this.dbManager = new RmiDatabaseManager(dbName);
+        DatabaseConfig config = new DatabaseConfig();
+        config.setDatabaseName(dbName);
+        this.dbManager = new RmiDatabaseManager(config);
         if (!dbManager.initialize()) {
             LOGGER.severe("[RMI_MGR] Khoi tao MySQL that bai cho " + dbName);
             return false;
@@ -83,6 +87,9 @@ public class RmiServerManager {
         this.recordDao = new RecordDao(dbManager);
         this.userDao = new UserDao(dbManager);
         this.syncEventDao = new SyncEventDao(dbManager);
+
+        // Don dep cac phien online cu khi khoi dong
+        this.userDao.clearAllSessions();
 
         try {
             // 2. Thiet lap hostname cho RMI de ho tro may that & may ao
@@ -97,7 +104,7 @@ public class RmiServerManager {
             }
 
             // 4. Bind services
-            dataSyncService = new DataSyncServiceImpl(nodeId, recordDao, syncEventDao, this);
+            dataSyncService = new DataSyncServiceImpl(nodeId, recordDao, syncEventDao, userDao, this);
             clientDataService = new ClientDataServiceImpl(nodeId, recordDao, userDao, syncEventDao, this);
 
             localRegistry.rebind("DataSyncService", dataSyncService);
@@ -118,6 +125,24 @@ public class RmiServerManager {
         } catch (Exception e) {
             LOGGER.severe("[RMI_MGR_ERR] Khoi dong RMI Server that bai: " + e.getMessage());
             return false;
+        }
+    }
+
+    public synchronized void updatePeerConfig(String newHost, int newPort) {
+        this.peerHost = newHost != null ? newHost.trim() : "127.0.0.1";
+        this.peerPort = newPort;
+        LOGGER.info("[RMI_MGR] Cap nhat cau hinh Peer Server: " + peerHost + ":" + peerPort);
+        if (asyncTaskPool != null) {
+            asyncTaskPool.submit(() -> {
+                boolean alive = checkPeerAlive();
+                peerConnected = alive;
+                for (ServerDashboardListener l : listeners) {
+                    l.onPeerStatusChanged(peerConnected, peerHost, peerPort);
+                }
+                if (peerConnected) {
+                    reconcileWithPeer();
+                }
+            });
         }
     }
 
@@ -143,7 +168,7 @@ public class RmiServerManager {
         }, 1, 3, TimeUnit.SECONDS);
     }
 
-    private boolean checkPeerAlive() {
+    public boolean checkPeerAlive() {
         try {
             Registry peerReg = LocateRegistry.getRegistry(peerHost, peerPort);
             IDataSyncService peerSync = (IDataSyncService) peerReg.lookup("DataSyncService");
@@ -151,6 +176,39 @@ public class RmiServerManager {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public boolean isUserLoggedInOnPeer(String username) {
+        if (!peerConnected) return false;
+        try {
+            Registry peerReg = LocateRegistry.getRegistry(peerHost, peerPort);
+            IDataSyncService peerSync = (IDataSyncService) peerReg.lookup("DataSyncService");
+            return peerSync.isUserLoggedInOnPeer(username);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public void notifyUserSessionChanged(String username, boolean isOnline, String node) {
+        if (!peerConnected) return;
+        asyncTaskPool.submit(() -> {
+            try {
+                Registry peerReg = LocateRegistry.getRegistry(peerHost, peerPort);
+                IDataSyncService peerSync = (IDataSyncService) peerReg.lookup("DataSyncService");
+                peerSync.notifyUserSessionChanged(username, isOnline, node);
+            } catch (Exception ignored) {}
+        });
+    }
+
+    public void replicateUserToPeer(User user) {
+        if (!peerConnected) return;
+        asyncTaskPool.submit(() -> {
+            try {
+                Registry peerReg = LocateRegistry.getRegistry(peerHost, peerPort);
+                IDataSyncService peerSync = (IDataSyncService) peerReg.lookup("DataSyncService");
+                peerSync.replicateUser(user);
+            } catch (Exception ignored) {}
+        });
     }
 
     /**
@@ -210,7 +268,6 @@ public class RmiServerManager {
                     syncEventDao.logEvent(action, record.getId(), record.getTitle(), nodeId, peerHost + ":" + peerPort, "FAILED");
                 }
             } catch (Exception e) {
-                // Peer Server dang offline -> giu cờ is_synced = 0 de Reconcile sau
                 LOGGER.warning("[REPLICATE_OUT_ERR] Peer Server offline, ban ghi se duoc luu lai va dong bo sau: " + e.getMessage());
                 syncEventDao.logEvent(action, record.getId(), record.getTitle(), nodeId, peerHost + ":" + peerPort, "QUEUED_OFFLINE");
             }
