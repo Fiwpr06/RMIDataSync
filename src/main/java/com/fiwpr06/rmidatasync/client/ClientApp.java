@@ -20,10 +20,10 @@ public class ClientApp extends Application {
         Scene scene = new Scene(root);
         scene.getStylesheets().add(getClass().getResource("/com/fiwpr06/rmidatasync/css/client.css").toExternalForm());
 
-        stage.setTitle("⚡ RMIDataSync - Authentication & Server Selection");
+        stage.setTitle("RMIDataSync - Đăng nhập và chọn máy chủ");
         stage.setScene(scene);
-        stage.setMinWidth(740);
-        stage.setMinHeight(580);
+        stage.setMinWidth(780);
+        stage.setMinHeight(620);
         stage.show();
     }
 
