@@ -44,14 +44,28 @@ public class AuthViewController {
     public void selectNodeA() {
         txtHost.setText("127.0.0.1");
         txtPort.setText("1099");
-        setStatus("Đã chọn máy chủ Node A (Cổng 1099).", false);
+        setStatus("Đã chọn máy chủ Node A trên cổng 1099", false);
     }
 
     @FXML
     public void selectNodeB() {
         txtHost.setText("127.0.0.1");
         txtPort.setText("1100");
-        setStatus("Đã chọn máy chủ Node B (Cổng 1100).", false);
+        setStatus("Đã chọn máy chủ Node B trên cổng 1100", false);
+    }
+
+    @FXML
+    public void handleFillAdmin() {
+        txtLoginUser.setText("admin");
+        txtLoginPass.setText("admin123");
+        setStatus("Đã điền tài khoản mẫu: admin", false);
+    }
+
+    @FXML
+    public void handleFillUser1() {
+        txtLoginUser.setText("user1");
+        txtLoginPass.setText("123");
+        setStatus("Đã điền tài khoản mẫu: user1", false);
     }
 
     @FXML
@@ -180,9 +194,9 @@ public class AuthViewController {
 
             NodeInfo node = clientManager.getNodeInfo();
             String nodeName = (node != null) ? node.getNodeId() : "Server";
-            stage.setTitle("⚡ RMIDataSync - " + clientManager.getLoggedInUser() + "@" + nodeName + " (" + clientManager.getCurrentHost() + ":" + clientManager.getCurrentPort() + ")");
-            stage.setMinWidth(1100);
-            stage.setMinHeight(680);
+            stage.setTitle("RMIDataSync - " + clientManager.getLoggedInUser() + " đang kết nối " + nodeName);
+            stage.setMinWidth(1180);
+            stage.setMinHeight(740);
             stage.centerOnScreen();
         } catch (IOException e) {
             e.printStackTrace();

@@ -91,13 +91,13 @@ public class ClientMainController {
     private void updateHeaderInfo() {
         if (clientManager == null) return;
         String user = clientManager.getLoggedInUser();
-        lblCurrentUser.setText("👤 Người dùng: " + (user != null ? user : "Guest"));
+        lblCurrentUser.setText("Người dùng: " + (user != null ? user : "Guest"));
 
         NodeInfo node = clientManager.getNodeInfo();
         String nodeName = (node != null) ? node.getNodeId() : "Server";
-        lblCurrentServer.setText("⚡ Máy chủ: " + nodeName + " (" + clientManager.getCurrentHost() + ":" + clientManager.getCurrentPort() + ")");
-        lblNodeStatus.setText("ĐÃ KẾT NỐI");
-        lblNodeStatus.setStyle("-fx-text-fill: #059669; -fx-font-weight: bold; -fx-background-color: #DCFCE7; -fx-padding: 3px 8px; -fx-background-radius: 12px;");
+        lblCurrentServer.setText("Máy chủ: " + nodeName + " (" + clientManager.getCurrentHost() + ":" + clientManager.getCurrentPort() + ")");
+        lblNodeStatus.setText("● Đã kết nối");
+        lblNodeStatus.setStyle("-fx-text-fill: #15803D; -fx-font-weight: bold; -fx-background-color: #DCFCE7; -fx-padding: 3px 10px; -fx-background-radius: 12px;");
     }
 
     private void setupTable() {
@@ -113,6 +113,15 @@ public class ClientMainController {
 
         filteredData = new FilteredList<>(masterData, p -> true);
         tblRecords.setItems(filteredData);
+
+        tblRecords.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                RecordItem selected = tblRecords.getSelectionModel().getSelectedItem();
+                if (selected != null) {
+                    populateEditor(selected);
+                }
+            }
+        });
     }
 
     private void setupSearchFilter() {

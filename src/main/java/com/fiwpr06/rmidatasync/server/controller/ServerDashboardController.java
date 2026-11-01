@@ -6,6 +6,8 @@ import com.fiwpr06.rmidatasync.shared.model.RecordItem;
 import com.fiwpr06.rmidatasync.shared.model.SyncEvent;
 import com.fiwpr06.rmidatasync.shared.util.AlertHelper;
 import com.fiwpr06.rmidatasync.shared.util.DateTimeUtil;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -13,6 +15,9 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.util.Duration;
 
 import java.text.DecimalFormat;
 import java.util.List;
@@ -23,6 +28,7 @@ public class ServerDashboardController implements RmiServerManager.ServerDashboa
     @FXML private Label lblLocalInfo;
     @FXML private Label lblPeerInfo;
     @FXML private Label lblPeerBadge;
+    @FXML private Label lblCopyFeedback;
     @FXML private Button btnForceSync;
 
     // Peer Configuration inputs
@@ -62,6 +68,7 @@ public class ServerDashboardController implements RmiServerManager.ServerDashboa
     @FXML private TextArea txtConsole;
 
     private RmiServerManager serverManager;
+    private Timeline feedbackTimeline;
     private final DecimalFormat currencyFormat = new DecimalFormat("#,### VNĐ");
 
     private final ObservableList<RecordItem> recordsList = FXCollections.observableArrayList();
@@ -71,7 +78,7 @@ public class ServerDashboardController implements RmiServerManager.ServerDashboa
         this.serverManager = manager;
         this.serverManager.addListener(this);
 
-        lblNodeTitle.setText("⚡ RMI NODE DASHBOARD (" + manager.getNodeId() + ")");
+        lblNodeTitle.setText("RMI NODE DASHBOARD - " + manager.getNodeId());
         lblLocalInfo.setText(manager.getLocalNodeInfo().getHost() + ":" + manager.getLocalPort());
         lblPeerInfo.setText(manager.getPeerHost() + ":" + manager.getPeerPort());
 
@@ -119,6 +126,31 @@ public class ServerDashboardController implements RmiServerManager.ServerDashboa
     }
 
     @FXML
+    public void handleCopyLocalAddress() {
+        String addr = lblLocalInfo.getText();
+        if (addr != null && !addr.isEmpty()) {
+            ClipboardContent content = new ClipboardContent();
+            content.putString(addr);
+            Clipboard.getSystemClipboard().setContent(content);
+            showFeedback("✓ Đã sao chép địa chỉ máy chủ: " + addr);
+        }
+    }
+
+    @FXML
+    public void handleSetPeerPresetA() {
+        if (txtPeerHost != null) txtPeerHost.setText("127.0.0.1");
+        if (txtPeerPort != null) txtPeerPort.setText("1099");
+        showFeedback("Đã chọn cấu hình đối tác: Cổng 1099");
+    }
+
+    @FXML
+    public void handleSetPeerPresetB() {
+        if (txtPeerHost != null) txtPeerHost.setText("127.0.0.1");
+        if (txtPeerPort != null) txtPeerPort.setText("1100");
+        showFeedback("Đã chọn cấu hình đối tác: Cổng 1100");
+    }
+
+    @FXML
     public void handleUpdatePeer() {
         if (txtPeerHost == null || txtPeerPort == null) return;
         String host = txtPeerHost.getText().trim();
@@ -132,6 +164,7 @@ public class ServerDashboardController implements RmiServerManager.ServerDashboa
 
         serverManager.updatePeerConfig(host, port);
         lblPeerInfo.setText(host + ":" + port);
+        showFeedback("✓ Đã kết nối lại đối tác: " + host + ":" + port);
         logConsole("[CONFIG] Đã cập nhật máy đối tác: " + host + ":" + port + ". Đang kết nối...");
     }
 
@@ -139,7 +172,27 @@ public class ServerDashboardController implements RmiServerManager.ServerDashboa
     public void handleForceReconcile() {
         if (serverManager != null) {
             serverManager.reconcileWithPeer();
-            logConsole("[RECONCILE] Người dùng kích hoạt cưỡng chế đồng bộ bù dữ liệu (Force Reconcile)...");
+            showFeedback("✓ Đã kích hoạt đồng bộ bù dữ liệu");
+            logConsole("[RECONCILE] Người dùng kích hoạt đồng bộ bù dữ liệu...");
+        }
+    }
+
+    @FXML
+    public void clearConsole() {
+        if (txtConsole != null) {
+            txtConsole.clear();
+            showFeedback("✓ Đã dọn dẹp nhật ký");
+        }
+    }
+
+    private void showFeedback(String message) {
+        if (lblCopyFeedback != null) {
+            lblCopyFeedback.setText(message);
+            if (feedbackTimeline != null) {
+                feedbackTimeline.stop();
+            }
+            feedbackTimeline = new Timeline(new KeyFrame(Duration.seconds(3), e -> lblCopyFeedback.setText("")));
+            feedbackTimeline.play();
         }
     }
 
@@ -202,15 +255,15 @@ public class ServerDashboardController implements RmiServerManager.ServerDashboa
     public void onPeerStatusChanged(boolean online, String peerHost, int peerPort) {
         Platform.runLater(() -> {
             if (online) {
-                lblPeerBadge.setText("🟢 PEER ONLINE (" + peerHost + ":" + peerPort + ") - ĐANG ĐỒNG BỘ 2 CHIỀU");
-                lblPeerBadge.setStyle("-fx-text-fill: #059669; -fx-background-color: #DCFCE7; -fx-padding: 4px 10px; -fx-background-radius: 12px; -fx-font-weight: bold;");
+                lblPeerBadge.setText("● Đã kết nối đối tác (" + peerHost + ":" + peerPort + ")");
+                lblPeerBadge.setStyle("-fx-text-fill: #15803D; -fx-background-color: #DCFCE7; -fx-padding: 5px 12px; -fx-background-radius: 12px; -fx-font-weight: bold;");
                 btnForceSync.setDisable(false);
-                logConsole("[HEARTBEAT] Máy chủ đối tác (" + peerHost + ":" + peerPort + ") ĐÃ KẾT NỐI (ONLINE).");
+                logConsole("[HEARTBEAT] Máy chủ đối tác (" + peerHost + ":" + peerPort + ") đã kết nối.");
             } else {
-                lblPeerBadge.setText("🔴 PEER OFFLINE - ĐANG CHỜ MÁY ĐỐI TÁC");
-                lblPeerBadge.setStyle("-fx-text-fill: #DC2626; -fx-background-color: #FEE2E2; -fx-padding: 4px 10px; -fx-background-radius: 12px; -fx-font-weight: bold;");
+                lblPeerBadge.setText("● Đang chờ máy đối tác");
+                lblPeerBadge.setStyle("-fx-text-fill: #DC2626; -fx-background-color: #FEE2E2; -fx-padding: 5px 12px; -fx-background-radius: 12px; -fx-font-weight: bold;");
                 btnForceSync.setDisable(true);
-                logConsole("[HEARTBEAT] Máy chủ đối tác (" + peerHost + ":" + peerPort + ") MẤT KẾT NỐI (OFFLINE).");
+                logConsole("[HEARTBEAT] Máy chủ đối tác (" + peerHost + ":" + peerPort + ") mất kết nối.");
             }
         });
     }
