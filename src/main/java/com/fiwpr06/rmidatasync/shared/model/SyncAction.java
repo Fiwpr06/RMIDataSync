@@ -7,5 +7,6 @@ public enum SyncAction {
     CREATE,
     UPDATE,
     DELETE,
+    REPLICATE,
     RECONCILE
 }
