@@ -1,0 +1,185 @@
+/* ==========================================================================
+   RMI SERVER NODE DASHBOARD - CYBERPUNK DARK SLATE (DESIGN-KIT STANDARD)
+   ========================================================================== */
+
+.root {
+    -fx-base: #0B0E14;
+    -fx-background-color: #0B0E14;
+    -fx-font-family: 'Segoe UI', Arial, sans-serif;
+    -fx-font-size: 13px;
+    -fx-text-fill: #E2E8F0;
+}
+
+/* Header & HUD Bar */
+.hud-bar {
+    -fx-background-color: #0F141C;
+    -fx-border-color: #1A2233;
+    -fx-border-width: 0 0 1px 0;
+    -fx-padding: 12px 16px;
+    -fx-spacing: 14px;
+    -fx-alignment: center-left;
+}
+
+.hud-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #00D2E6;
+}
+
+.peer-badge-online {
+    -fx-background-color: #103B2B;
+    -fx-text-fill: #2EE68A;
+    -fx-font-weight: bold;
+    -fx-padding: 4px 10px;
+    -fx-background-radius: 4px;
+    -fx-border-color: #2EE68A;
+    -fx-border-radius: 4px;
+    -fx-border-width: 1px;
+}
+
+.peer-badge-offline {
+    -fx-background-color: #3B1219;
+    -fx-text-fill: #FF3B56;
+    -fx-font-weight: bold;
+    -fx-padding: 4px 10px;
+    -fx-background-radius: 4px;
+    -fx-border-color: #FF3B56;
+    -fx-border-radius: 4px;
+    -fx-border-width: 1px;
+}
+
+/* Stat Cards */
+.stat-card {
+    -fx-background-color: #111620;
+    -fx-border-color: #1A2233;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-padding: 12px 18px;
+    -fx-spacing: 4px;
+    -fx-min-width: 180px;
+}
+
+.stat-label {
+    -fx-font-size: 11.5px;
+    -fx-text-fill: #94A3B8;
+    -fx-font-weight: bold;
+}
+
+.stat-value {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #00D2E6;
+}
+
+/* Buttons */
+.btn-primary {
+    -fx-background-color: #00D2E6;
+    -fx-text-fill: #0B0E14;
+    -fx-font-weight: bold;
+    -fx-background-radius: 4px;
+    -fx-padding: 6px 14px;
+    -fx-cursor: hand;
+}
+.btn-primary:hover {
+    -fx-background-color: #33DCED;
+}
+
+.btn-danger {
+    -fx-background-color: #FF3B56;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-weight: bold;
+    -fx-background-radius: 4px;
+    -fx-padding: 6px 14px;
+    -fx-cursor: hand;
+}
+.btn-danger:hover {
+    -fx-background-color: #FF5C73;
+}
+
+.btn-secondary {
+    -fx-background-color: #1A2233;
+    -fx-text-fill: #E2E8F0;
+    -fx-background-radius: 4px;
+    -fx-border-color: #2D3748;
+    -fx-border-radius: 4px;
+    -fx-padding: 6px 12px;
+    -fx-cursor: hand;
+}
+.btn-secondary:hover {
+    -fx-background-color: #242E44;
+}
+
+/* Input Fields */
+.text-field {
+    -fx-background-color: #111620;
+    -fx-text-fill: #E2E8F0;
+    -fx-border-color: #2D3748;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-padding: 6px 10px;
+}
+
+/* TabPane */
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-background-color: #0F141C;
+}
+.tab {
+    -fx-background-color: #1A2233;
+    -fx-background-radius: 4px 4px 0 0;
+    -fx-padding: 6px 14px;
+}
+.tab:selected {
+    -fx-background-color: #00D2E6;
+}
+.tab:selected .tab-label {
+    -fx-text-fill: #0B0E14;
+    -fx-font-weight: bold;
+}
+.tab .tab-label {
+    -fx-text-fill: #94A3B8;
+}
+
+/* TableView */
+.table-view {
+    -fx-background-color: #0F141C;
+    -fx-border-color: #1A2233;
+    -fx-border-radius: 4px;
+    -fx-table-cell-border-color: #1A2233;
+}
+.table-view .column-header-background {
+    -fx-background-color: #161D2A;
+}
+.table-view .column-header {
+    -fx-background-color: #161D2A;
+    -fx-border-color: #1A2233;
+    -fx-border-width: 0 1px 1px 0;
+    -fx-padding: 8px 6px;
+}
+.table-view .column-header .label {
+    -fx-text-fill: #94A3B8;
+    -fx-font-weight: bold;
+}
+.table-row-cell {
+    -fx-background-color: #0F141C;
+    -fx-border-color: #1A2233;
+    -fx-border-width: 0 0 1px 0;
+}
+.table-row-cell:odd {
+    -fx-background-color: #121822;
+}
+.table-row-cell:selected {
+    -fx-background-color: #1E293B;
+}
+.table-cell {
+    -fx-text-fill: #E2E8F0;
+    -fx-padding: 6px 10px;
+}
+
+/* Console Log */
+.console-area {
+    -fx-control-inner-background: #06080C;
+    -fx-text-fill: #2EE68A;
+    -fx-font-family: 'Consolas', 'Courier New', monospace;
+    -fx-font-size: 12px;
+    -fx-border-color: #1A2233;
+}

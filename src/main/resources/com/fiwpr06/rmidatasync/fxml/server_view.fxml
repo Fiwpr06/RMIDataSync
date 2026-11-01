@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox prefHeight="720.0" prefWidth="1000.0" spacing="0.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.fiwpr06.rmidatasync.server.controller.ServerDashboardController">
+    <!-- Header HUD Bar -->
+    <HBox styleClass="hud-bar">
+        <Label fx:id="lblNodeTitle" styleClass="hud-title" text="⚡ RMI NODE DASHBOARD (NODE A)" />
+        <Region HBox.hgrow="ALWAYS" />
+        <Label text="Local Host:" style="-fx-text-fill: #94A3B8;" />
+        <Label fx:id="lblLocalInfo" text="127.0.0.1:1099" style="-fx-text-fill: #00D2E6; -fx-font-weight: bold;" />
+        <Separator orientation="VERTICAL" />
+        <Label text="Peer Server:" style="-fx-text-fill: #94A3B8;" />
+        <Label fx:id="lblPeerInfo" text="127.0.0.1:1100" style="-fx-text-fill: #E2E8F0;" />
+        <Label fx:id="lblPeerBadge" styleClass="peer-badge-offline" text="PEER OFFLINE" />
+        <Separator orientation="VERTICAL" />
+        <Button fx:id="btnForceSync" onAction="#handleForceReconcile" styleClass="btn-primary" text="🔄 Reconcile Sync" />
+    </HBox>
+
+    <!-- Stat Overview Cards -->
+    <HBox spacing="16.0" style="-fx-background-color: #0B0E14; -fx-padding: 14px 16px 6px 16px;">
+        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+            <Label styleClass="stat-label" text="TOTAL MYSQL RECORDS" />
+            <Label fx:id="lblTotalRecords" styleClass="stat-value" text="0" />
+        </VBox>
+        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+            <Label styleClass="stat-label" text="SYNCED WITH PEER" />
+            <Label fx:id="lblSyncedRecords" styleClass="stat-value" text="0" style="-fx-text-fill: #2EE68A;" />
+        </VBox>
+        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+            <Label styleClass="stat-label" text="PENDING / QUEUED REPLICATION" />
+            <Label fx:id="lblPendingRecords" styleClass="stat-value" text="0" style="-fx-text-fill: #FF3B56;" />
+        </VBox>
+    </HBox>
+
+    <!-- Main Content Tabs -->
+    <TabPane tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS" style="-fx-padding: 10px 16px 16px 16px;">
+        <!-- Tab 1: Records Table -->
+        <Tab text="MySQL Node Database">
+            <VBox spacing="10.0">
+                <padding><Insets bottom="10.0" left="10.0" right="10.0" top="10.0" /></padding>
+                <HBox alignment="CENTER_LEFT" spacing="10.0">
+                    <Label text="Table: records" style="-fx-font-weight: bold; -fx-text-fill: #00D2E6;" />
+                    <Region HBox.hgrow="ALWAYS" />
+                    <Button onAction="#refreshRecords" styleClass="btn-secondary" text="🔄 Reload Records" />
+                </HBox>
+                <TableView fx:id="tblRecords" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colRecId" prefWidth="120.0" text="Record ID" />
+                        <TableColumn fx:id="colRecTitle" prefWidth="220.0" text="Title" />
+                        <TableColumn fx:id="colRecCategory" prefWidth="110.0" text="Category" />
+                        <TableColumn fx:id="colRecVersion" prefWidth="70.0" text="Version" />
+                        <TableColumn fx:id="colRecOrigin" prefWidth="100.0" text="Origin Node" />
+                        <TableColumn fx:id="colRecSynced" prefWidth="90.0" text="Synced?" />
+                        <TableColumn fx:id="colRecTime" prefWidth="180.0" text="Last Modified" />
+                    </columns>
+                </TableView>
+            </VBox>
+        </Tab>
+
+        <!-- Tab 2: Sync Events History -->
+        <Tab text="RMI Replication Event Logs">
+            <VBox spacing="10.0">
+                <padding><Insets bottom="10.0" left="10.0" right="10.0" top="10.0" /></padding>
+                <HBox alignment="CENTER_LEFT" spacing="10.0">
+                    <Label text="Table: sync_events" style="-fx-font-weight: bold; -fx-text-fill: #00D2E6;" />
+                    <Region HBox.hgrow="ALWAYS" />
+                    <Button onAction="#refreshEvents" styleClass="btn-secondary" text="🔄 Reload Events" />
+                </HBox>
+                <TableView fx:id="tblEvents" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colEvId" prefWidth="60.0" text="ID" />
+                        <TableColumn fx:id="colEvType" prefWidth="110.0" text="Action" />
+                        <TableColumn fx:id="colEvRecId" prefWidth="120.0" text="Record ID" />
+                        <TableColumn fx:id="colEvTitle" prefWidth="220.0" text="Record Title" />
+                        <TableColumn fx:id="colEvSource" prefWidth="100.0" text="Source" />
+                        <TableColumn fx:id="colEvTarget" prefWidth="130.0" text="Target Node" />
+                        <TableColumn fx:id="colEvStatus" prefWidth="100.0" text="Status" />
+                        <TableColumn fx:id="colEvTime" prefWidth="160.0" text="Timestamp" />
+                    </columns>
+                </TableView>
+            </VBox>
+        </Tab>
+
+        <!-- Tab 3: Node Console -->
+        <Tab text="Real-time RMI Console">
+            <VBox spacing="8.0">
+                <padding><Insets bottom="10.0" left="10.0" right="10.0" top="10.0" /></padding>
+                <TextArea fx:id="txtConsole" editable="false" styleClass="console-area" wrapText="true" VBox.vgrow="ALWAYS" />
+            </VBox>
+        </Tab>
+    </TabPane>
+</VBox>
