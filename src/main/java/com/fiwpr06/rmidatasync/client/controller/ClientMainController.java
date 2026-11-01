@@ -11,41 +11,49 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.Stage;
 
+import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.List;
-import java.util.Optional;
 
 public class ClientMainController {
 
-    // Connection Bar
-    @FXML private TextField txtHost;
-    @FXML private TextField txtPort;
-    @FXML private Button btnConnect;
-    @FXML private Button btnDisconnect;
+    // Header Info Bar
+    @FXML private Label lblCurrentUser;
+    @FXML private Label lblCurrentServer;
     @FXML private Label lblNodeStatus;
+    @FXML private Button btnLogout;
 
-    // Auth Bar
-    @FXML private TextField txtUsername;
-    @FXML private PasswordField txtPassword;
-    @FXML private Button btnLogin;
-    @FXML private Label lblLoggedInUser;
+    // Fast Switch Buttons
+    @FXML private Button btnSwitchNodeA;
+    @FXML private Button btnSwitchNodeB;
 
-    // Records Table
+    // Inventory Table
     @FXML private TextField txtSearch;
     @FXML private TableView<RecordItem> tblRecords;
     @FXML private TableColumn<RecordItem, String> colId;
     @FXML private TableColumn<RecordItem, String> colTitle;
     @FXML private TableColumn<RecordItem, String> colCategory;
+    @FXML private TableColumn<RecordItem, String> colPrice;
+    @FXML private TableColumn<RecordItem, Integer> colQuantity;
+    @FXML private TableColumn<RecordItem, String> colStatus;
     @FXML private TableColumn<RecordItem, Integer> colVersion;
     @FXML private TableColumn<RecordItem, String> colOrigin;
     @FXML private TableColumn<RecordItem, String> colLastModified;
 
-    // Record Editor Panel
+    // Inventory Editor Panel
     @FXML private TextField txtRecordId;
     @FXML private TextField txtRecordTitle;
     @FXML private TextField txtRecordCategory;
+    @FXML private TextField txtRecordPrice;
+    @FXML private TextField txtRecordQuantity;
+    @FXML private ComboBox<String> cmbRecordStatus;
     @FXML private Label lblRecordOrigin;
     @FXML private TextArea txtRecordContent;
 
@@ -53,23 +61,52 @@ public class ClientMainController {
     @FXML private Label lblBottomStatus;
 
     private RmiClientManager clientManager;
+    private final DecimalFormat currencyFormat = new DecimalFormat("#,### VNĐ");
 
     private final ObservableList<RecordItem> masterData = FXCollections.observableArrayList();
     private FilteredList<RecordItem> filteredData;
 
     @FXML
     public void initialize() {
-        this.clientManager = new RmiClientManager();
+        if (this.clientManager == null) {
+            this.clientManager = new RmiClientManager();
+        }
+
+        if (cmbRecordStatus != null) {
+            cmbRecordStatus.setItems(FXCollections.observableArrayList("Còn hàng", "Sắp hết hàng", "Hết hàng"));
+            cmbRecordStatus.setValue("Còn hàng");
+        }
 
         setupTable();
         setupSearchFilter();
         setupSelectionListener();
     }
 
+    public void initSession(RmiClientManager manager) {
+        this.clientManager = manager;
+        updateHeaderInfo();
+        handleRefresh();
+    }
+
+    private void updateHeaderInfo() {
+        if (clientManager == null) return;
+        String user = clientManager.getLoggedInUser();
+        lblCurrentUser.setText("👤 Người dùng: " + (user != null ? user : "Guest"));
+
+        NodeInfo node = clientManager.getNodeInfo();
+        String nodeName = (node != null) ? node.getNodeId() : "Server";
+        lblCurrentServer.setText("⚡ Máy chủ: " + nodeName + " (" + clientManager.getCurrentHost() + ":" + clientManager.getCurrentPort() + ")");
+        lblNodeStatus.setText("ĐÃ KẾT NỐI");
+        lblNodeStatus.setStyle("-fx-text-fill: #059669; -fx-font-weight: bold; -fx-background-color: #DCFCE7; -fx-padding: 3px 8px; -fx-background-radius: 12px;");
+    }
+
     private void setupTable() {
         colId.setCellValueFactory(new PropertyValueFactory<>("id"));
         colTitle.setCellValueFactory(new PropertyValueFactory<>("title"));
         colCategory.setCellValueFactory(new PropertyValueFactory<>("category"));
+        colPrice.setCellValueFactory(data -> new SimpleStringProperty(currencyFormat.format(data.getValue().getPrice())));
+        colQuantity.setCellValueFactory(new PropertyValueFactory<>("quantity"));
+        colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
         colVersion.setCellValueFactory(new PropertyValueFactory<>("version"));
         colOrigin.setCellValueFactory(new PropertyValueFactory<>("originNode"));
         colLastModified.setCellValueFactory(data -> new SimpleStringProperty(DateTimeUtil.formatEpochMillis(data.getValue().getLastModified())));
@@ -86,9 +123,10 @@ public class ClientMainController {
                 }
                 String lower = newVal.toLowerCase();
                 boolean matchTitle = record.getTitle() != null && record.getTitle().toLowerCase().contains(lower);
+                boolean matchId = record.getId() != null && record.getId().toLowerCase().contains(lower);
                 boolean matchCategory = record.getCategory() != null && record.getCategory().toLowerCase().contains(lower);
                 boolean matchContent = record.getContent() != null && record.getContent().toLowerCase().contains(lower);
-                return matchTitle || matchCategory || matchContent;
+                return matchTitle || matchId || matchCategory || matchContent;
             });
         });
     }
@@ -105,157 +143,25 @@ public class ClientMainController {
         txtRecordId.setText(item.getId());
         txtRecordTitle.setText(item.getTitle());
         txtRecordCategory.setText(item.getCategory());
+        txtRecordPrice.setText(String.valueOf((long) item.getPrice()));
+        txtRecordQuantity.setText(String.valueOf(item.getQuantity()));
+        if (cmbRecordStatus != null) {
+            cmbRecordStatus.setValue(item.getStatus() != null ? item.getStatus() : "Còn hàng");
+        }
         lblRecordOrigin.setText(item.getOriginNode() + " (v" + item.getVersion() + ")");
         txtRecordContent.setText(item.getContent());
     }
 
-    // ================= KET NOI & CHUYEN SERVER =================
-
-    @FXML
-    public void handleConnect() {
-        String host = txtHost.getText().trim();
-        int port;
-        try {
-            port = Integer.parseInt(txtPort.getText().trim());
-        } catch (NumberFormatException e) {
-            AlertHelper.showWarning("Input Error", "Port phai la so nguyen!");
-            return;
-        }
-
-        connectToServer(host, port);
-    }
-
-    private void connectToServer(String host, int port) {
-        lblBottomStatus.setText("Connecting to RMI Server " + host + ":" + port + "...");
-        new Thread(() -> {
-            boolean ok = clientManager.connect(host, port);
-            Platform.runLater(() -> {
-                if (ok) {
-                    btnConnect.setDisable(true);
-                    btnDisconnect.setDisable(false);
-                    NodeInfo node = clientManager.getNodeInfo();
-                    String nodeName = (node != null) ? node.getNodeId() : "Server";
-                    lblNodeStatus.setText("Connected: " + nodeName + " (" + host + ":" + port + ")");
-                    lblNodeStatus.setStyle("-fx-text-fill: #2EE68A; -fx-font-weight: bold;");
-                    lblBottomStatus.setText("Connected to " + nodeName);
-                    // Tu dong dang nhap mac dinh neu co
-                    handleLogin();
-                    handleRefresh();
-                } else {
-                    btnConnect.setDisable(false);
-                    lblNodeStatus.setText("Connection Failed");
-                    lblNodeStatus.setStyle("-fx-text-fill: #FF3B56; -fx-font-weight: bold;");
-                    lblBottomStatus.setText("Connection failed.");
-                    AlertHelper.showError("Connection Failed", "Khong the ket noi toi RMI Server tai " + host + ":" + port);
-                }
-            });
-        }).start();
-    }
-
-    @FXML
-    public void switchToNodeA() {
-        txtHost.setText("127.0.0.1");
-        txtPort.setText("1099");
-        if (clientManager.isConnected()) {
-            clientManager.disconnect();
-        }
-        connectToServer("127.0.0.1", 1099);
-    }
-
-    @FXML
-    public void switchToNodeB() {
-        txtHost.setText("127.0.0.1");
-        txtPort.setText("1100");
-        if (clientManager.isConnected()) {
-            clientManager.disconnect();
-        }
-        connectToServer("127.0.0.1", 1100);
-    }
-
-    @FXML
-    public void handleDisconnect() {
-        clientManager.disconnect();
-        btnConnect.setDisable(false);
-        btnDisconnect.setDisable(true);
-        lblNodeStatus.setText("Not Connected");
-        lblNodeStatus.setStyle("-fx-text-fill: #FF3B56; -fx-font-weight: bold;");
-        lblLoggedInUser.setText("Guest (Read Only)");
-        masterData.clear();
-        handleClearForm();
-        lblBottomStatus.setText("Disconnected from server.");
-    }
-
-    // ================= XAC THUC =================
-
-    @FXML
-    public void handleLogin() {
-        if (!clientManager.isConnected()) {
-            AlertHelper.showWarning("Chua ket noi", "Vui long ket noi toi Server RMI truoc khi dang nhap.");
-            return;
-        }
-
-        String user = txtUsername.getText().trim();
-        String pass = txtPassword.getText().trim();
-        if (user.isEmpty() || pass.isEmpty()) return;
-
-        new Thread(() -> {
-            boolean success = clientManager.login(user, pass);
-            Platform.runLater(() -> {
-                if (success) {
-                    lblLoggedInUser.setText("👤 User: " + user);
-                    lblLoggedInUser.setStyle("-fx-text-fill: #2EE68A; -fx-font-weight: bold;");
-                    lblBottomStatus.setText("Logged in as " + user);
-                } else {
-                    AlertHelper.showError("Auth Error", "Sai ten dang nhap hoac mat khau tren MySQL database.");
-                }
-            });
-        }).start();
-    }
-
-    @FXML
-    public void handleRegister() {
-        if (!clientManager.isConnected()) {
-            AlertHelper.showWarning("Chua ket noi", "Vui long ket noi toi Server RMI truoc khi dang ky.");
-            return;
-        }
-
-        TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Register New Account");
-        dialog.setHeaderText("Create account in Server MySQL Database");
-        dialog.setContentText("Enter username,password,fullname (separated by comma):");
-        Optional<String> res = dialog.showAndWait();
-        res.ifPresent(input -> {
-            String[] parts = input.split(",");
-            if (parts.length >= 2) {
-                String u = parts[0].trim();
-                String p = parts[1].trim();
-                String fn = parts.length >= 3 ? parts[2].trim() : u;
-                new Thread(() -> {
-                    boolean ok = clientManager.register(u, p, fn);
-                    Platform.runLater(() -> {
-                        if (ok) {
-                            AlertHelper.showInfo("Success", "Dang ky tai khoan '" + u + "' thanh cong!");
-                            txtUsername.setText(u);
-                            txtPassword.setText(p);
-                        } else {
-                            AlertHelper.showError("Error", "Dang ky that bai.");
-                        }
-                    });
-                }).start();
-            }
-        });
-    }
-
-    // ================= CRUD RECORDS =================
+    // ================= CRUD SAN PHAM & CAN THIEP KHO =================
 
     @FXML
     public void handleRefresh() {
-        if (!clientManager.isConnected()) return;
+        if (clientManager == null || !clientManager.isConnected()) return;
         new Thread(() -> {
             List<RecordItem> items = clientManager.getAllRecords();
             Platform.runLater(() -> {
                 masterData.setAll(items);
-                lblBottomStatus.setText("Loaded " + items.size() + " records from server.");
+                lblBottomStatus.setText("Đã tải " + items.size() + " sản phẩm từ CSDL " + clientManager.getCurrentHost() + ":" + clientManager.getCurrentPort());
             });
         }).start();
     }
@@ -271,6 +177,9 @@ public class ClientMainController {
         txtRecordId.clear();
         txtRecordTitle.clear();
         txtRecordCategory.clear();
+        txtRecordPrice.clear();
+        txtRecordQuantity.clear();
+        if (cmbRecordStatus != null) cmbRecordStatus.setValue("Còn hàng");
         lblRecordOrigin.setText("-");
         txtRecordContent.clear();
         tblRecords.getSelectionModel().clearSelection();
@@ -279,13 +188,13 @@ public class ClientMainController {
     @FXML
     public void handleSaveRecord() {
         if (!clientManager.isConnected()) {
-            AlertHelper.showWarning("Chua ket noi", "Vui long ket noi toi Server RMI truoc khi luu du lieu.");
+            AlertHelper.showWarning("Chưa kết nối", "Vui lòng kết nối tới Server RMI trước khi lưu dữ liệu.");
             return;
         }
 
         String title = txtRecordTitle.getText().trim();
         if (title.isEmpty()) {
-            AlertHelper.showWarning("Input Error", "Tieu de ban ghi khong duoc de trong!");
+            AlertHelper.showWarning("Lỗi nhập liệu", "Tên sản phẩm không được để trống!");
             return;
         }
 
@@ -293,10 +202,35 @@ public class ClientMainController {
         String cat = txtRecordCategory.getText().trim();
         String content = txtRecordContent.getText();
 
+        double price = 0;
+        try {
+            if (!txtRecordPrice.getText().trim().isEmpty()) {
+                price = Double.parseDouble(txtRecordPrice.getText().trim().replaceAll("[^0-9.]", ""));
+            }
+        } catch (NumberFormatException e) {
+            AlertHelper.showWarning("Lỗi nhập liệu", "Đơn giá phải là số hợp lệ!");
+            return;
+        }
+
+        int qty = 0;
+        try {
+            if (!txtRecordQuantity.getText().trim().isEmpty()) {
+                qty = Integer.parseInt(txtRecordQuantity.getText().trim());
+            }
+        } catch (NumberFormatException e) {
+            AlertHelper.showWarning("Lỗi nhập liệu", "Số lượng tồn kho phải là số nguyên!");
+            return;
+        }
+
+        String status = cmbRecordStatus != null ? cmbRecordStatus.getValue() : "Còn hàng";
+
         RecordItem item = new RecordItem();
         item.setId(id.isEmpty() ? null : id);
         item.setTitle(title);
-        item.setCategory(cat.isEmpty() ? "General" : cat);
+        item.setCategory(cat.isEmpty() ? "Khác" : cat);
+        item.setPrice(price);
+        item.setQuantity(qty);
+        item.setStatus(status);
         item.setContent(content);
 
         new Thread(() -> {
@@ -309,10 +243,10 @@ public class ClientMainController {
 
             Platform.runLater(() -> {
                 if (ok) {
-                    AlertHelper.showInfo("Thanh cong", "Ban ghi da duoc luu tren Server va tu dong kich hoat dong bo RMI!");
+                    AlertHelper.showInfo("Thành công", "Đã lưu sản phẩm vào kho và kích hoạt đồng bộ RMI tức thời sang Server đối tác!");
                     handleRefresh();
                 } else {
-                    AlertHelper.showError("Loi", "Khong the luu ban ghi.");
+                    AlertHelper.showError("Lỗi", "Không thể lưu sản phẩm.");
                 }
             });
         }).start();
@@ -323,23 +257,129 @@ public class ClientMainController {
         if (!clientManager.isConnected()) return;
         RecordItem selected = tblRecords.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            AlertHelper.showWarning("Thong bao", "Vui long chon mot ban ghi can xoa.");
+            AlertHelper.showWarning("Thông báo", "Vui lòng chọn một sản phẩm cần xóa.");
             return;
         }
 
-        if (AlertHelper.showConfirmation("Xac nhan", "Ban co chac muon xoa ban ghi '" + selected.getTitle() + "'?\nHanh dong nay se dong bo xoa tren ca 2 Server!")) {
+        if (AlertHelper.showConfirmation("Xác nhận xóa", "Bạn có chắc muốn xóa sản phẩm '" + selected.getTitle() + "'?\nHành động này sẽ xóa dữ liệu trên cả 2 Server!")) {
             new Thread(() -> {
                 boolean ok = clientManager.deleteRecord(selected.getId());
                 Platform.runLater(() -> {
                     if (ok) {
                         handleClearForm();
                         handleRefresh();
-                        AlertHelper.showInfo("Thanh cong", "Da xoa ban ghi.");
+                        AlertHelper.showInfo("Thành công", "Đã xóa sản phẩm khỏi hệ thống phân tán.");
                     } else {
-                        AlertHelper.showError("Loi", "Xoa that bai.");
+                        AlertHelper.showError("Lỗi", "Xóa sản phẩm thất bại.");
                     }
                 });
             }).start();
+        }
+    }
+
+    // ================= CAN THIEP NHANH SO LUONG TON KHO =================
+
+    @FXML
+    public void handleStockPlus10() {
+        RecordItem selected = tblRecords.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            AlertHelper.showWarning("Thông báo", "Vui lòng chọn 1 sản phẩm trong bảng để nhập thêm kho (+10).");
+            return;
+        }
+
+        new Thread(() -> {
+            boolean ok = clientManager.adjustStock(selected.getId(), 10);
+            Platform.runLater(() -> {
+                if (ok) {
+                    lblBottomStatus.setText("Đã nhập thêm +10 vào sản phẩm " + selected.getTitle());
+                    handleRefresh();
+                }
+            });
+        }).start();
+    }
+
+    @FXML
+    public void handleStockMinus1() {
+        RecordItem selected = tblRecords.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            AlertHelper.showWarning("Thông báo", "Vui lòng chọn 1 sản phẩm trong bảng để xuất kho (-1).");
+            return;
+        }
+
+        if (selected.getQuantity() <= 0) {
+            AlertHelper.showWarning("Cảnh báo", "Sản phẩm này đã hết hàng trong kho!");
+            return;
+        }
+
+        new Thread(() -> {
+            boolean ok = clientManager.adjustStock(selected.getId(), -1);
+            Platform.runLater(() -> {
+                if (ok) {
+                    lblBottomStatus.setText("Đã xuất kho -1 sản phẩm " + selected.getTitle());
+                    handleRefresh();
+                }
+            });
+        }).start();
+    }
+
+    // ================= CHUYEN MAY CHU & DANG XUAT =================
+
+    @FXML
+    public void switchToNodeA() {
+        switchServer("127.0.0.1", 1099, "NODE_A");
+    }
+
+    @FXML
+    public void switchToNodeB() {
+        switchServer("127.0.0.1", 1100, "NODE_B");
+    }
+
+    private void switchServer(String host, int port, String targetNode) {
+        String user = clientManager.getLoggedInUser();
+        lblBottomStatus.setText("Đang chuyển kết nối sang " + targetNode + " (" + host + ":" + port + ")...");
+        new Thread(() -> {
+            // Giai phong phien tai server cu truoc khi sang server moi
+            clientManager.logout();
+            boolean ok = clientManager.connect(host, port);
+            if (ok && user != null) {
+                // Dang nhap vao server moi
+                clientManager.loginDetailed(user, "123");
+            }
+            Platform.runLater(() -> {
+                if (ok) {
+                    updateHeaderInfo();
+                    handleRefresh();
+                    AlertHelper.showInfo("Chuyển Server Thành công", "Đã chuyển sang kết nối với " + targetNode + ".\nDữ liệu hiển thị đồng bộ 100%!");
+                } else {
+                    AlertHelper.showError("Lỗi kết nối", "Không thể kết nối sang " + targetNode + " tại " + host + ":" + port);
+                }
+            });
+        }).start();
+    }
+
+    @FXML
+    public void handleLogout() {
+        if (clientManager != null) {
+            clientManager.disconnect();
+        }
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/fiwpr06/rmidatasync/fxml/auth_view.fxml"));
+            Parent root = loader.load();
+            Stage stage = (Stage) btnLogout.getScene().getWindow();
+            stage.getScene().setRoot(root);
+            stage.setTitle("⚡ RMIDataSync - Authentication & Server Selection");
+            stage.setWidth(740);
+            stage.setHeight(580);
+            stage.centerOnScreen();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void handleDisconnect() {
+        if (clientManager != null) {
+            clientManager.disconnect();
         }
     }
 }
