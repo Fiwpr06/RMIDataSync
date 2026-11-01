@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox prefHeight="750.0" prefWidth="1100.0" spacing="0.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.fiwpr06.rmidatasync.client.controller.ClientMainController">
+    <!-- Top Server Connect & Switch Bar -->
+    <HBox styleClass="connect-bar">
+        <Label text="Server Host:" style="-fx-text-fill: #94A3B8;" />
+        <TextField fx:id="txtHost" prefWidth="140.0" text="127.0.0.1" promptText="Host/IP" />
+        <Label text="Port:" style="-fx-text-fill: #94A3B8;" />
+        <TextField fx:id="txtPort" prefWidth="80.0" text="1099" promptText="Port" />
+        <Button fx:id="btnConnect" onAction="#handleConnect" styleClass="btn-primary" text="⚡ Connect RMI" />
+        <Button fx:id="btnDisconnect" disable="true" onAction="#handleDisconnect" styleClass="btn-danger" text="Disconnect" />
+        <Separator orientation="VERTICAL" />
+        <Label text="Quick Switch:" style="-fx-text-fill: #94A3B8;" />
+        <Button onAction="#switchToNodeA" styleClass="btn-switch" text="🔗 Switch Node A (1099)" />
+        <Button onAction="#switchToNodeB" styleClass="btn-switch" text="🔗 Switch Node B (1100)" />
+        <Region HBox.hgrow="ALWAYS" />
+        <Label fx:id="lblNodeStatus" text="Not Connected" style="-fx-text-fill: #FF3B56; -fx-font-weight: bold;" />
+    </HBox>
+
+    <!-- Authentication Bar -->
+    <HBox styleClass="auth-bar">
+        <Label text="Account Login:" style="-fx-text-fill: #00D2E6; -fx-font-weight: bold;" />
+        <TextField fx:id="txtUsername" prefWidth="130.0" promptText="Username" text="admin" />
+        <PasswordField fx:id="txtPassword" prefWidth="130.0" promptText="Password" text="admin" />
+        <Button fx:id="btnLogin" onAction="#handleLogin" styleClass="btn-secondary" text="🔑 Login" />
+        <Button onAction="#handleRegister" styleClass="btn-secondary" text="📝 Register New" />
+        <Region HBox.hgrow="ALWAYS" />
+        <Label fx:id="lblLoggedInUser" text="Guest (Read Only)" style="-fx-text-fill: #94A3B8;" />
+    </HBox>
+
+    <!-- Main Workspace (Dual Split: Data Table & Record Editor) -->
+    <SplitPane dividerPositions="0.62" VBox.vgrow="ALWAYS" style="-fx-background-color: #0B0E14; -fx-padding: 8px;">
+        <!-- Left: Records Table -->
+        <VBox spacing="8.0" style="-fx-background-color: #0F141C; -fx-border-color: #1A2233; -fx-border-radius: 4px; -fx-padding: 10px;">
+            <HBox alignment="CENTER_LEFT" spacing="8.0">
+                <Label text="Distributed Synchronized Records:" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #00D2E6;" />
+                <Region HBox.hgrow="ALWAYS" />
+                <TextField fx:id="txtSearch" prefWidth="180.0" promptText="🔍 Search title/content..." />
+                <Button onAction="#handleRefresh" styleClass="btn-secondary" text="🔄 Refresh" />
+                <Button onAction="#handleNewRecord" styleClass="btn-primary" text="➕ New Record" />
+                <Button onAction="#handleDeleteRecord" styleClass="btn-danger" text="🗑 Delete" />
+            </HBox>
+            <TableView fx:id="tblRecords" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colId" prefWidth="100.0" text="ID" />
+                    <TableColumn fx:id="colTitle" prefWidth="220.0" text="Title" />
+                    <TableColumn fx:id="colCategory" prefWidth="110.0" text="Category" />
+                    <TableColumn fx:id="colVersion" prefWidth="65.0" text="Version" />
+                    <TableColumn fx:id="colOrigin" prefWidth="95.0" text="Origin Node" />
+                    <TableColumn fx:id="colLastModified" prefWidth="160.0" text="Last Modified" />
+                </columns>
+            </TableView>
+        </VBox>
+
+        <!-- Right: Detail & Editor Panel -->
+        <VBox spacing="10.0" styleClass="detail-panel">
+            <Label styleClass="detail-title" text="📄 Record Detail &amp; Editor" />
+            <GridPane hgap="8.0" vgap="10.0">
+                <columnConstraints>
+                    <ColumnConstraints prefWidth="90.0" />
+                    <ColumnConstraints hgrow="ALWAYS" />
+                </columnConstraints>
+                <Label text="Record ID:" GridPane.rowIndex="0" GridPane.columnIndex="0" style="-fx-text-fill: #94A3B8;" />
+                <TextField fx:id="txtRecordId" editable="false" promptText="Auto-generated ID" GridPane.rowIndex="0" GridPane.columnIndex="1" />
+
+                <Label text="Title:" GridPane.rowIndex="1" GridPane.columnIndex="0" style="-fx-text-fill: #94A3B8;" />
+                <TextField fx:id="txtRecordTitle" promptText="Enter document/record title" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+
+                <Label text="Category:" GridPane.rowIndex="2" GridPane.columnIndex="0" style="-fx-text-fill: #94A3B8;" />
+                <TextField fx:id="txtRecordCategory" promptText="Category (e.g. Report, Design, Note)" GridPane.rowIndex="2" GridPane.columnIndex="1" />
+
+                <Label text="Origin Node:" GridPane.rowIndex="3" GridPane.columnIndex="0" style="-fx-text-fill: #94A3B8;" />
+                <Label fx:id="lblRecordOrigin" text="-" style="-fx-text-fill: #00D2E6; -fx-font-weight: bold;" GridPane.rowIndex="3" GridPane.columnIndex="1" />
+            </GridPane>
+
+            <Label text="Content / Body:" style="-fx-text-fill: #94A3B8; -fx-font-weight: bold;" />
+            <TextArea fx:id="txtRecordContent" promptText="Document body content..." VBox.vgrow="ALWAYS" wrapText="true" />
+
+            <HBox spacing="10.0" alignment="CENTER_RIGHT">
+                <Button onAction="#handleClearForm" styleClass="btn-secondary" text="Clear Form" />
+                <Button onAction="#handleSaveRecord" styleClass="btn-primary" text="💾 Save to Server" />
+            </HBox>
+        </VBox>
+    </SplitPane>
+
+    <!-- Bottom Status Bar -->
+    <HBox styleClass="status-bar">
+        <Label fx:id="lblBottomStatus" text="Ready." style="-fx-text-fill: #94A3B8;" />
+        <Region HBox.hgrow="ALWAYS" />
+        <Label text="RMI Active-Active Replication Enabled" style="-fx-text-fill: #2EE68A; -fx-font-weight: bold;" />
+    </HBox>
+</VBox>

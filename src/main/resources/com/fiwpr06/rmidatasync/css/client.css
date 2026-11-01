@@ -1,0 +1,159 @@
+/* ==========================================================================
+   RMI CLIENT THEME - DISTRIBUTED SYNC WORKSPACE (DESIGN-KIT STANDARD)
+   ========================================================================== */
+
+.root {
+    -fx-base: #0B0E14;
+    -fx-background-color: #0B0E14;
+    -fx-font-family: 'Segoe UI', Arial, sans-serif;
+    -fx-font-size: 13px;
+    -fx-text-fill: #E2E8F0;
+}
+
+/* Header & Server Connect Bar */
+.connect-bar {
+    -fx-background-color: #0F141C;
+    -fx-border-color: #1A2233;
+    -fx-border-width: 0 0 1px 0;
+    -fx-padding: 10px 16px;
+    -fx-spacing: 12px;
+    -fx-alignment: center-left;
+}
+
+/* Auth Bar */
+.auth-bar {
+    -fx-background-color: #121822;
+    -fx-border-color: #1A2233;
+    -fx-border-width: 0 0 1px 0;
+    -fx-padding: 8px 16px;
+    -fx-spacing: 10px;
+    -fx-alignment: center-left;
+}
+
+/* Buttons */
+.btn-primary {
+    -fx-background-color: #00D2E6;
+    -fx-text-fill: #0B0E14;
+    -fx-font-weight: bold;
+    -fx-background-radius: 4px;
+    -fx-padding: 6px 14px;
+    -fx-cursor: hand;
+}
+.btn-primary:hover {
+    -fx-background-color: #33DCED;
+}
+
+.btn-secondary {
+    -fx-background-color: #1A2233;
+    -fx-text-fill: #E2E8F0;
+    -fx-background-radius: 4px;
+    -fx-border-color: #2D3748;
+    -fx-border-radius: 4px;
+    -fx-padding: 6px 12px;
+    -fx-cursor: hand;
+}
+.btn-secondary:hover {
+    -fx-background-color: #242E44;
+}
+
+.btn-danger {
+    -fx-background-color: #FF3B56;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-weight: bold;
+    -fx-background-radius: 4px;
+    -fx-padding: 6px 12px;
+    -fx-cursor: hand;
+}
+.btn-danger:hover {
+    -fx-background-color: #FF5C73;
+}
+
+.btn-switch {
+    -fx-background-color: #1A2233;
+    -fx-text-fill: #00D2E6;
+    -fx-font-weight: bold;
+    -fx-background-radius: 4px;
+    -fx-border-color: #00D2E6;
+    -fx-border-radius: 4px;
+    -fx-border-width: 1px;
+    -fx-padding: 5px 10px;
+    -fx-cursor: hand;
+}
+.btn-switch:hover {
+    -fx-background-color: #00D2E6;
+    -fx-text-fill: #0B0E14;
+}
+
+/* Inputs */
+.text-field, .password-field, .text-area {
+    -fx-background-color: #111620;
+    -fx-text-fill: #E2E8F0;
+    -fx-border-color: #2D3748;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-padding: 6px 10px;
+}
+.text-field:focused, .password-field:focused, .text-area:focused {
+    -fx-border-color: #00D2E6;
+}
+
+/* Detail Panel */
+.detail-panel {
+    -fx-background-color: #0F141C;
+    -fx-border-color: #1A2233;
+    -fx-border-radius: 6px;
+    -fx-padding: 14px;
+    -fx-spacing: 10px;
+}
+
+.detail-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #00D2E6;
+}
+
+/* TableView */
+.table-view {
+    -fx-background-color: #0F141C;
+    -fx-border-color: #1A2233;
+    -fx-border-radius: 4px;
+    -fx-table-cell-border-color: #1A2233;
+}
+.table-view .column-header-background {
+    -fx-background-color: #161D2A;
+}
+.table-view .column-header {
+    -fx-background-color: #161D2A;
+    -fx-border-color: #1A2233;
+    -fx-border-width: 0 1px 1px 0;
+    -fx-padding: 8px 6px;
+}
+.table-view .column-header .label {
+    -fx-text-fill: #94A3B8;
+    -fx-font-weight: bold;
+}
+.table-row-cell {
+    -fx-background-color: #0F141C;
+    -fx-border-color: #1A2233;
+    -fx-border-width: 0 0 1px 0;
+}
+.table-row-cell:odd {
+    -fx-background-color: #121822;
+}
+.table-row-cell:selected {
+    -fx-background-color: #1E293B;
+}
+.table-cell {
+    -fx-text-fill: #E2E8F0;
+    -fx-padding: 6px 10px;
+}
+
+/* Status Bar */
+.status-bar {
+    -fx-background-color: #0F141C;
+    -fx-border-color: #1A2233;
+    -fx-border-width: 1px 0 0 0;
+    -fx-padding: 6px 14px;
+    -fx-spacing: 12px;
+    -fx-alignment: center-left;
+}
