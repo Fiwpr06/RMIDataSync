@@ -40,28 +40,25 @@ public class RmiReplicationTest {
 
     @Test
     public void testTwoWayReplication() throws Exception {
-        // 1. Client ket noi toi Node A
         Registry regA = LocateRegistry.getRegistry("127.0.0.1", PORT_A);
         IClientDataService clientServiceA = (IClientDataService) regA.lookup("ClientDataService");
 
-        // Dang nhap
-        boolean loggedIn = clientServiceA.login("admin", "admin");
-        Assertions.assertTrue(loggedIn, "Dang nhap tai khoan admin phai thanh cong tren Node A");
-
-        // 2. Tao ban ghi moi tren Node A
+        // Tao ban ghi moi tren Node A
         RecordItem newRecord = new RecordItem();
         newRecord.setTitle("Test Distributed Record 101");
         newRecord.setCategory("Research");
+        newRecord.setPrice(15000000);
+        newRecord.setQuantity(10);
+        newRecord.setStatus("Còn hàng");
         newRecord.setContent("Noi dung du lieu dong bo phan tan giua 2 Server qua RMI.");
         newRecord.setUpdatedBy("admin");
 
         boolean created = clientServiceA.createRecord(newRecord);
         Assertions.assertTrue(created, "Tao ban ghi tren Node A phai thanh cong");
 
-        // 3. Cho 1 giay de tien trinh replication bat dong bo truyen sang Node B
+        // Cho de replication truyen sang Node B
         Thread.sleep(1000);
 
-        // 4. Client ket noi toi Node B de kiem tra du lieu da sang Node B chua
         Registry regB = LocateRegistry.getRegistry("127.0.0.1", PORT_B);
         IClientDataService clientServiceB = (IClientDataService) regB.lookup("ClientDataService");
 
@@ -71,7 +68,6 @@ public class RmiReplicationTest {
         boolean existsOnB = recordsOnB.stream().anyMatch(r -> r.getTitle().equals("Test Distributed Record 101"));
         Assertions.assertTrue(existsOnB, "Ban ghi tao tu Node A phai xuat hien tren Node B!");
 
-        // 5. Lay ban ghi tren Node B va cap nhat noi dung tu Node B
         RecordItem recFromB = recordsOnB.stream()
                 .filter(r -> r.getTitle().equals("Test Distributed Record 101"))
                 .findFirst().orElse(null);
@@ -81,7 +77,7 @@ public class RmiReplicationTest {
         boolean updatedOnB = clientServiceB.updateRecord(recFromB);
         Assertions.assertTrue(updatedOnB, "Cap nhat ban ghi tu Node B phai thanh cong");
 
-        // 6. Cho 1 giay de dong bo nguoc tu Node B sang Node A
+        // Cho de dong bo nguoc ve Node A
         Thread.sleep(1000);
 
         List<RecordItem> recordsOnA = clientServiceA.getAllRecords();
@@ -92,5 +88,70 @@ public class RmiReplicationTest {
         Assertions.assertNotNull(recFromA);
         Assertions.assertEquals("Noi dung da duoc sua doi boi Client tren Node B!", recFromA.getContent(),
                 "Du lieu sua tu Node B phai duoc dong bo nguoc lai ve Node A!");
+    }
+
+    @Test
+    public void testSingleActiveSessionAcrossNodes() throws Exception {
+        Registry regA = LocateRegistry.getRegistry("127.0.0.1", PORT_A);
+        IClientDataService clientServiceA = (IClientDataService) regA.lookup("ClientDataService");
+
+        Registry regB = LocateRegistry.getRegistry("127.0.0.1", PORT_B);
+        IClientDataService clientServiceB = (IClientDataService) regB.lookup("ClientDataService");
+
+        String testUser = "user_session_" + System.currentTimeMillis();
+        clientServiceA.register(testUser, "123", "Session Test User");
+        Thread.sleep(500);
+
+        // 1. Login tren Node A -> Thanh cong
+        String statusA = clientServiceA.loginDetailed(testUser, "123");
+        Assertions.assertEquals("SUCCESS", statusA, "Dang nhap tren Node A phai thanh cong");
+
+        // 2. Thu login cung user tren Node B -> Bi chan ngay vi dang online tren Node A!
+        String statusB = clientServiceB.loginDetailed(testUser, "123");
+        Assertions.assertTrue(statusB.startsWith("ALREADY_LOGGED_IN:"), "Node B phai tu choi dang nhap vi user dang online: " + statusB);
+
+        // 3. Logout tren Node A
+        clientServiceA.logout(testUser);
+        Thread.sleep(500);
+
+        // 4. Bay gio login tren Node B -> Thanh cong!
+        String statusB2 = clientServiceB.loginDetailed(testUser, "123");
+        Assertions.assertEquals("SUCCESS", statusB2, "Sau khi logout tren Node A, Node B phai cho phep dang nhap");
+
+        clientServiceB.logout(testUser);
+    }
+
+    @Test
+    public void testAdjustStockReplication() throws Exception {
+        Registry regA = LocateRegistry.getRegistry("127.0.0.1", PORT_A);
+        IClientDataService clientServiceA = (IClientDataService) regA.lookup("ClientDataService");
+
+        Registry regB = LocateRegistry.getRegistry("127.0.0.1", PORT_B);
+        IClientDataService clientServiceB = (IClientDataService) regB.lookup("ClientDataService");
+
+        RecordItem item = new RecordItem();
+        item.setTitle("Laptop Dell XPS 13 Plus");
+        item.setCategory("Máy tính xách tay");
+        item.setPrice(32000000);
+        item.setQuantity(20);
+        item.setStatus("Còn hàng");
+
+        clientServiceA.createRecord(item);
+        Thread.sleep(1000);
+
+        List<RecordItem> itemsB = clientServiceB.getAllRecords();
+        RecordItem itemB = itemsB.stream().filter(r -> r.getTitle().equals("Laptop Dell XPS 13 Plus")).findFirst().orElse(null);
+        Assertions.assertNotNull(itemB);
+
+        // Nhap kho +10 tu Node B
+        boolean adjusted = clientServiceB.adjustStock(itemB.getId(), 10, "admin");
+        Assertions.assertTrue(adjusted);
+
+        Thread.sleep(1000);
+
+        List<RecordItem> itemsA = clientServiceA.getAllRecords();
+        RecordItem itemA = itemsA.stream().filter(r -> r.getId().equals(itemB.getId())).findFirst().orElse(null);
+        Assertions.assertNotNull(itemA);
+        Assertions.assertEquals(30, itemA.getQuantity(), "Ton kho phai duoc cap nhat len 30 tren Node A sau khi Node B nhap +10!");
     }
 }

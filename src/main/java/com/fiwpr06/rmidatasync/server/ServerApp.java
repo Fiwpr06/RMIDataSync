@@ -53,7 +53,7 @@ public class ServerApp extends Application {
         Scene scene = new Scene(root);
         scene.getStylesheets().add(getClass().getResource("/com/fiwpr06/rmidatasync/css/server.css").toExternalForm());
 
-        stage.setTitle("⚡ RMI Server Node Dashboard (" + node + " - Port " + localPort + ") - Lab 5");
+        stage.setTitle("⚡ RMIDataSync Server Node Dashboard (" + node + " - Port " + localPort + ")");
         stage.setScene(scene);
         stage.setMinWidth(900);
         stage.setMinHeight(580);

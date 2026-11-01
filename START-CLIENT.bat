@@ -2,10 +2,10 @@
 setlocal
 cd /d "%~dp0"
 chcp 65001 >nul
-title RMI Data Sync Client - Lab 5
+title RMIDataSync Client Desktop App
 
 echo ========================================================
-echo   RMI Data Sync Client - Lab 5
+echo   RMIDataSync Client Desktop App
 echo ========================================================
 echo.
 

@@ -2,10 +2,10 @@
 setlocal
 cd /d "%~dp0"
 chcp 65001 >nul
-title RMI Server Node B (Port 1100, DB: rmisync_db_b) - Lab 5
+title RMIDataSync Server Node B (Port 1100, DB: rmisync_db_b)
 
 echo ========================================================
-echo   RMI Server Node B (Port 1100, DB: rmisync_db_b) - Lab 5
+echo   RMIDataSync Server Node B (Port 1100, DB: rmisync_db_b)
 echo ========================================================
 echo.
 

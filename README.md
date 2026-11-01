@@ -1,33 +1,49 @@
-# ⚡ RMIDataSync — Distributed Multi-Master Record Synchronization (Lab 5)
+# ⚡ RMIDataSync — Distributed Multi-Master Inventory Synchronization System
 
-Hệ thống đồng bộ hóa dữ liệu phân tán hai chiều (Multi-Master Active-Active Replication) qua **Java RMI** và cơ sở dữ liệu **MySQL**, đáp ứng 100% yêu cầu đồ án Lab 5:
-> **Lab 5:** RMI Đồng bộ hóa dữ liệu trên 2 Server. Cách chấm: Server chạy trên 2 máy thực và các Client chạy trên các máy ảo (VMware / VirtualBox).
+Hệ thống quản lý kho hàng và đồng bộ hóa dữ liệu phân tán hai chiều (**Multi-Master Active-Active Replication**) thông qua **Java RMI** và cơ sở dữ liệu **MySQL**, hỗ trợ kiểm soát phiên phân tán (**Single-Session Concurrency Control**) và giao diện sáng **Light Modern High-Legibility** theo chuẩn Design-Kit.
 
 ---
 
 ## 🌟 1. Điểm nổi bật & Tính năng chính
 
-1. **Kiến trúc Multi-Master Active-Active (Hai chiều không xung đột):**
-   - Cả 2 Server Node (Node A & Node B) đều có thể nhận ghi đọc trực tiếp từ Client.
-   - Khi có thay đổi (Create / Update / Delete) tại một Node, Node đó ngay lập tức đẩy biến động qua RMI (`IDataSyncService.replicateRecord()`) sang Node còn lại.
-2. **Reconciliation & Heartbeat tự động:**
-   - Mỗi Node định kỳ phát Heartbeat kiểm tra sức khỏe của Node đối tác.
-   - Khi phát hiện đối tác vừa kết nối lại sau sự cố mạng (Offline -> Online), hệ thống tự động chạy **Reconciliation (Full Sync)** để bù toàn bộ dữ liệu bị trễ theo mốc thời gian `lastSyncTimestamp`.
-3. **Optimistic Locking & Last-Write-Wins (LWW):**
-   - Mỗi bản ghi có trường `version` và `last_modified`. Nếu nhận được bản ghi có version thấp hơn, server tự động bỏ qua để chống ghi đè dữ liệu cũ.
-4. **Hỗ trợ chạy xuyên máy thực & máy ảo (VM):**
-   - Tự động cấu hình `java.rmi.server.hostname` bằng IP LAN thực tế của máy chủ thông qua `NetworkUtil.setupRmiHostname()`, khắc phục triệt để lỗi RMI bind `127.0.0.1` khiến máy ảo hoặc máy khác không gọi được stub.
-5. **Cơ sở dữ liệu MySQL độc lập:**
-   - Node A lưu trữ tại database `rmisync_db_a`.
-   - Node B lưu trữ tại database `rmisync_db_b`.
-   - Không hash mật khẩu (theo yêu cầu đơn giản hóa để chấm bài).
-6. **Giao diện người dùng hiện đại (JavaFX Cyberpunk Dark):**
-   - **Server Node Dashboard:** Hiển thị IP/Port lắng nghe, trạng thái Live của Peer Server, bảng lịch sử các sự kiện đồng bộ RMI theo thời gian thực.
-   - **Client App:** Nút chuyển đổi nhanh giữa Server A (Port 1099) và Server B (Port 1100), thanh kết nối IP/Port tùy biến cho máy ảo, tìm kiếm tức thì, form nhập liệu trực quan.
+1. **Kiểm soát Phiên Phân tán (Single-Session Concurrency Control):**
+   - **Quy tắc:** Mỗi tài khoản chỉ được phép tồn tại/đăng nhập trên **1 máy chủ** tại một thời điểm, không thể đăng nhập 2 máy chủ cùng lúc.
+   - Khi người dùng đăng nhập tại Node A, Node A ghi nhận trạng thái và thông báo qua RMI cho Node B.
+   - Nếu ai đó cố tình dùng cùng tài khoản này đăng nhập vào Node B, hệ thống sẽ **lập tức từ chối và cảnh báo**:
+     > ⚠️ *"Tài khoản 'admin' hiện đang trực tuyến tại NODE_A. Vui lòng đăng xuất trước khi đăng nhập máy chủ này!"*
+   - Khi người dùng đăng xuất (Logout) hoặc thoát ứng dụng, phiên làm việc được giải phóng tức thời, cho phép tài khoản đăng nhập vào máy chủ khác bình thường.
+
+2. **Nghiệp vụ Thực tế: Quản lý Kho Hàng & Sản phẩm Phân tán:**
+   - Mỗi sản phẩm gồm: Mã SP, Tên sản phẩm, Danh mục, Đơn giá (VNĐ), Tồn kho, Trạng thái (Còn hàng/Hết hàng), Cấu hình chi tiết, Phiên bản (`v1`, `v2`, `v3`), Node gốc.
+   - **Can thiệp dữ liệu tương tác cao:**
+     - `[+ Thêm sản phẩm]`: Thêm mới sản phẩm vào kho.
+     - `[💾 Lưu sửa đổi]`: Sửa giá, đổi mô tả, cập nhật thông tin.
+     - `[📦 Nhập kho (+10)]`: Tăng nhanh số lượng tồn kho lên 10, tăng version, phản chiếu tức thì sang Server đối tác.
+     - `[📤 Xuất kho (-1)]`: Giảm số lượng tồn kho 1, cập nhật trạng thái nếu hết hàng, phản chiếu tức thì.
+     - `[🗑️ Xóa sản phẩm]`: Xóa sản phẩm và đồng bộ lệnh xóa sang Server còn lại.
+     - `[🔍 Tìm kiếm & Lọc]`: Tìm kiếm tức thì theo mã, tên, danh mục.
+
+3. **Cấu hình & Kết nối 2 Server Rõ ràng (Peer Server Configuration):**
+   - Trực tiếp trên giao diện Server Dashboard có ô nhập:
+     - `Địa chỉ IP máy đối tác (Peer Host)`: Nhập IP máy thực thứ 2 (ví dụ: `192.168.1.50` hoặc `127.0.0.1`).
+     - `Cổng đối tác (Peer Port)`: Mặc định `1100` (hoặc `1099`).
+     - Nút **[🔗 Áp dụng & Kết nối lại]** và nút **[🔄 Đồng bộ bù (Reconcile)]**.
+   - Đèn LED trạng thái hiển thị rõ:
+     - `🟢 PEER ONLINE (192.168.1.50:1100) - ĐANG ĐỒNG BỘ 2 CHIỀU`
+     - `🔴 PEER OFFLINE - ĐANG CHỜ MÁY ĐỐI TÁC HOẶC KIỂM TRA LẠI IP`
+
+4. **Giao diện Sáng (Light Modern High-Legibility) chuẩn Design-Kit:**
+   - Nền sáng dịu (`#F8FAFC`, `#FFFFFF`), chữ đen sắc nét (`#0F172A`), độ tương phản cao, không gây mỏi mắt.
+   - Bảng biểu có độ rộng cột chuẩn xác, tự động co giãn (`TableView.CONSTRAINED_RESIZE_POLICY`), triệt tiêu hoàn toàn lỗi text bị cắt thành `...`.
+
+5. **Reconciliation & Heartbeat Tự động:**
+   - Tự động kiểm tra Heartbeat mỗi 3 giây.
+   - Khi một Node mất mạng hoặc tắt đột ngột, các bản ghi phát sinh tại Node còn lại sẽ được lưu trữ với cờ `is_synced = 0`.
+   - Ngay khi Node kết nối lại, hệ thống tự động bù toàn bộ dữ liệu bị trễ mà không làm mất thông tin.
 
 ---
 
-## 🛠️ 2. Cấu trúc thư mục chuẩn `default-tree`
+## 🛠️ 2. Cấu trúc Cây Thư mục
 
 ```text
 RMIDataSync/
@@ -37,19 +53,19 @@ RMIDataSync/
 │   │   ├── java/
 │   │   │   ├── module-info.java
 │   │   │   └── com/fiwpr06/rmidatasync/
-│   │   │       ├── client/     # Client App, Launcher & Controller
-│   │   │       ├── server/     # Server Nodes A/B Launchers & Dashboard Controller
+│   │   │       ├── client/     # Client App, Launcher & Controllers (AuthViewController, ClientMainController)
+│   │   │       ├── server/     # Server Nodes Launchers & Dashboard Controller
 │   │   │       │   ├── core/     # RmiServerManager, DataSyncServiceImpl, ClientDataServiceImpl
 │   │   │       │   └── database/ # MySQL Database Manager, RecordDao, UserDao, SyncEventDao
-│   │   │       └── shared/     # Model, RMI Interfaces, DateTime & Network Utilities
+│   │   │       └── shared/     # Models (RecordItem, User), RMI Interfaces, Utilities
 │   │   └── resources/
 │   │       ├── com/fiwpr06/rmidatasync/
-│   │       │   ├── css/        # server.css, client.css
-│   │       │   └── fxml/       # server_view.fxml, client_view.fxml
-│   │       └── db.properties   # Cấu hình kết nối MySQL (host, port, user, password)
+│   │       │   ├── css/        # server.css, client.css (Light Modern Theme)
+│   │       │   └── fxml/       # auth_view.fxml, client_view.fxml, server_view.fxml
+│   │       └── db.properties   # Cấu hình kết nối MySQL
 │   └── test/
 │       └── java/com/fiwpr06/rmidatasync/
-│           └── RmiReplicationTest.java # Kiểm thử tự động đồng bộ 2 chiều và Reconcile
+│           └── RmiReplicationTest.java # Kiểm thử tự động đồng bộ 2 chiều, phân tán và single-session
 ├── pom.xml
 ├── START-SERVER-A.bat / .vbs    # Khởi chạy Node A (Port 1099, rmisync_db_a)
 ├── START-SERVER-B.bat / .vbs    # Khởi chạy Node B (Port 1100, rmisync_db_b)
@@ -59,43 +75,24 @@ RMIDataSync/
 
 ---
 
-## 🚀 3. Hướng dẫn triển khai & Khởi chạy
+## 🚀 3. Hướng dẫn Khởi chạy & Kiểm tra
 
-### Bước 1: Chuẩn bị CSDL MySQL
-Đảm bảo dịch vụ MySQL đang chạy (mặc định port 3306, user `root`, pass rỗng hoặc chỉnh lại trong `src/main/resources/db.properties`).
-Hệ thống sẽ **tự động tạo database** `rmisync_db_a`, `rmisync_db_b` và các bảng dữ liệu khi khởi động, không cần import SQL thủ công!
+### Bước 1: Khởi động 2 Server Node
+- **Chạy Server Node A:** Nhấp đúp vào `START-SERVER-A.bat` (Cổng 1099, CSDL `rmisync_db_a`).
+- **Chạy Server Node B:** Nhấp đúp vào `START-SERVER-B.bat` (Cổng 1100, CSDL `rmisync_db_b`).
+- Đèn trạng thái trên 2 Dashboard sẽ chuyển sang màu xanh: `🟢 PEER ONLINE`.
 
-Tài khoản mặc định:
-- Username: `admin` | Password: `123`
-- Username: `user1` | Password: `123`
+### Bước 2: Khởi động Client & Thử nghiệm Kiểm soát Phiên Phân tán
+1. **Chạy Client 1 (`START-CLIENT.bat`):**
+   - Chọn **Node A (Port 1099)**.
+   - Đăng nhập tài khoản `admin` / `123` -> Đăng nhập thành công!
+2. **Chạy Client 2 (`START-CLIENT.bat` thứ 2):**
+   - Chọn **Node B (Port 1100)**.
+   - Cố tình đăng nhập cùng tài khoản `admin` / `123`.
+   - **Kết quả:** Hệ thống lập tức chặn lại và cảnh báo tài khoản `admin` đang online tại `NODE_A`!
+3. **Trên Client 1:** Bấm nút **[🚪 Đăng xuất]**.
+4. **Trên Client 2:** Bấm lại **[Đăng nhập]** -> Đăng nhập thành công vào Node B!
 
-### Bước 2: Chạy trên 1 máy tính (Localhost Test)
-- **Chạy Server Node A:** Nhấp đúp vào `START-SERVER-A.bat` (hoặc `mvnw javafx:run -Pserver-a`).
-- **Chạy Server Node B:** Nhấp đúp vào `START-SERVER-B.bat` (hoặc `mvnw javafx:run -Pserver-b`).
-- **Chạy Client:** Nhấp đúp vào `START-CLIENT.bat` (hoặc `mvnw javafx:run -Pclient`).
-
-### Bước 3: Triển khai 2 máy thực & máy ảo (VMware / VirtualBox)
-1. **Máy thực 1 (Node A):**
-   - Đặt IP LAN (ví dụ `192.168.1.10`).
-   - Mở port 1099 trên Windows Firewall.
-   - Chạy `START-SERVER-A.bat`.
-2. **Máy thực 2 (Node B):**
-   - Đặt IP LAN (ví dụ `192.168.1.20`).
-   - Sửa tham số Peer IP thành `192.168.1.10`.
-   - Mở port 1100 trên Windows Firewall.
-   - Chạy `START-SERVER-B.bat`.
-3. **Máy ảo Client (VM Bridged / Host-Only Network):**
-   - Chạy `START-CLIENT.bat`.
-   - Trên ô Host, nhập IP của Máy thực 1 (`192.168.1.10`) hoặc Máy thực 2 (`192.168.1.20`).
-   - Nhấn **Connect** và đăng nhập `admin` / `123`. Mọi thao tác thêm/sửa/xóa đều được phản chiếu tức thì qua cả 2 máy thực!
-
----
-
-## 🧪 4. Kiểm thử tự động (Unit & Integration Tests)
-Chạy lệnh kiểm thử toàn diện:
-```bash
-.\mvnw test
-```
-- Kiểm tra kết nối RMI 2 chiều giữa 2 Registry độc lập.
-- Kiểm tra tính toàn vẹn của tiến trình tạo mới tại Node A -> tự động nhân bản sang Node B.
-- Kiểm tra cập nhật tại Node B -> tự động nhân bản ngược về Node A.
+### Bước 3: Thử nghiệm Đồng bộ Kho Hàng Tức thời
+- Trên Client 1 (kết nối Node A): Chọn 1 sản phẩm, bấm **[📦 Nhập kho (+10)]**.
+- Trên Client 2 (kết nối Node B): Bấm **[🔄 Làm mới]** -> Số lượng tồn kho và Version nhảy số tức thì theo thời gian thực!
