@@ -39,7 +39,10 @@
                 <HBox spacing="10" alignment="CENTER_LEFT">
                     <VBox spacing="4" HBox.hgrow="ALWAYS">
                         <Label text="Địa chỉ máy chủ:" styleClass="field-label"/>
-                        <TextField fx:id="txtHost" promptText="127.0.0.1 hoặc IP mạng LAN" text="127.0.0.1" styleClass="text-input-field"/>
+                        <HBox spacing="6" alignment="CENTER_LEFT">
+                            <TextField fx:id="txtHost" promptText="127.0.0.1 hoặc IP mạng LAN" text="127.0.0.1" styleClass="text-input-field" HBox.hgrow="ALWAYS"/>
+                            <Button text="Dán" onAction="#handlePasteHost" styleClass="btn-pill" />
+                        </HBox>
                     </VBox>
                     <VBox spacing="4" prefWidth="100.0">
                         <Label text="Cổng:" styleClass="field-label"/>
@@ -50,6 +53,7 @@
                 <!-- Quick Server Toggle Buttons -->
                 <HBox spacing="10" alignment="CENTER_LEFT">
                     <Label text="Chọn nhanh máy chủ:" styleClass="field-label"/>
+                    <Button text="127.0.0.1" onAction="#selectLocalhost" styleClass="btn-pill" />
                     <Button text="Máy chủ A - Cổng 1099" onAction="#selectNodeA" styleClass="btn-pill" />
                     <Button text="Máy chủ B - Cổng 1100" onAction="#selectNodeB" styleClass="btn-pill" />
                 </HBox>

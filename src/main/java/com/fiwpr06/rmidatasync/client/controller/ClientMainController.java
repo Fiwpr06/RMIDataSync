@@ -364,12 +364,16 @@ public class ClientMainController {
 
     @FXML
     public void switchToNodeA() {
-        switchServer("127.0.0.1", 1099, "NODE_A");
+        String host = (clientManager != null && clientManager.getCurrentHost() != null)
+                ? clientManager.getCurrentHost() : "127.0.0.1";
+        switchServer(host, 1099, "NODE_A");
     }
 
     @FXML
     public void switchToNodeB() {
-        switchServer("127.0.0.1", 1100, "NODE_B");
+        String host = (clientManager != null && clientManager.getCurrentHost() != null)
+                ? clientManager.getCurrentHost() : "127.0.0.1";
+        switchServer(host, 1100, "NODE_B");
     }
 
     private void switchServer(String host, int port, String targetNode) {

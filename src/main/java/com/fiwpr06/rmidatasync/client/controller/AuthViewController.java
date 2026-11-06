@@ -9,6 +9,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.Clipboard;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -41,17 +42,48 @@ public class AuthViewController {
     }
 
     @FXML
-    public void selectNodeA() {
+    public void selectLocalhost() {
         txtHost.setText("127.0.0.1");
+        setStatus("Đã đặt địa chỉ máy chủ: 127.0.0.1", false);
+    }
+
+    @FXML
+    public void handlePasteHost() {
+        Clipboard clipboard = Clipboard.getSystemClipboard();
+        if (clipboard.hasString()) {
+            String text = clipboard.getString().trim();
+            if (text.contains(":")) {
+                String[] parts = text.split(":");
+                txtHost.setText(parts[0].trim());
+                if (parts.length > 1) {
+                    txtPort.setText(parts[1].trim());
+                }
+                setStatus("Đã dán địa chỉ máy chủ: " + text, false);
+            } else {
+                txtHost.setText(text);
+                setStatus("Đã dán IP máy chủ: " + text, false);
+            }
+        } else {
+            setStatus("Bộ nhớ tạm không có nội dung văn bản!", true);
+        }
+    }
+
+    @FXML
+    public void selectNodeA() {
+        if (txtHost.getText().trim().isEmpty()) {
+            txtHost.setText("127.0.0.1");
+        }
         txtPort.setText("1099");
-        setStatus("Đã chọn máy chủ Node A trên cổng 1099", false);
+        setStatus("Đã chọn máy chủ Node A (Cổng 1099)", false);
     }
 
     @FXML
     public void selectNodeB() {
-        txtHost.setText("127.0.0.1");
+        if (txtHost.getText().trim().isEmpty()) {
+            txtHost.setText("127.0.0.1");
+        }
         txtPort.setText("1100");
-        setStatus("Đã chọn máy chủ Node B trên cổng 1100", false);
+        setStatus("Đã chọn máy chủ Node B (Cổng 1100)", false);
     }
 
     @FXML
