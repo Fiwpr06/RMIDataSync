@@ -25,8 +25,8 @@ public class DataSyncServiceImpl extends UnicastRemoteObject implements IDataSyn
     private final UserDao userDao;
     private final RmiServerManager serverManager;
 
-    public DataSyncServiceImpl(String localNodeId, RecordDao recordDao, SyncEventDao syncEventDao, UserDao userDao, RmiServerManager serverManager) throws RemoteException {
-        super();
+    public DataSyncServiceImpl(String localNodeId, RecordDao recordDao, SyncEventDao syncEventDao, UserDao userDao, RmiServerManager serverManager, int port) throws RemoteException {
+        super(port);
         this.localNodeId = localNodeId;
         this.recordDao = recordDao;
         this.syncEventDao = syncEventDao;

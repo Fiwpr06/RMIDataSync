@@ -132,8 +132,8 @@ public class RmiServerManager {
             }
 
             // 4. Bind services
-            dataSyncService = new DataSyncServiceImpl(nodeId, recordDao, syncEventDao, userDao, this);
-            clientDataService = new ClientDataServiceImpl(nodeId, recordDao, userDao, syncEventDao, this);
+            dataSyncService = new DataSyncServiceImpl(nodeId, recordDao, syncEventDao, userDao, this, localPort);
+            clientDataService = new ClientDataServiceImpl(nodeId, recordDao, userDao, syncEventDao, this, localPort);
 
             localRegistry.rebind("DataSyncService", dataSyncService);
             localRegistry.rebind("ClientDataService", clientDataService);
@@ -173,8 +173,8 @@ public class RmiServerManager {
                 UnicastRemoteObject.unexportObject(clientDataService, true);
             }
 
-            dataSyncService = new DataSyncServiceImpl(nodeId, recordDao, syncEventDao, userDao, this);
-            clientDataService = new ClientDataServiceImpl(nodeId, recordDao, userDao, syncEventDao, this);
+            dataSyncService = new DataSyncServiceImpl(nodeId, recordDao, syncEventDao, userDao, this, localPort);
+            clientDataService = new ClientDataServiceImpl(nodeId, recordDao, userDao, syncEventDao, this, localPort);
 
             localRegistry.rebind("DataSyncService", dataSyncService);
             localRegistry.rebind("ClientDataService", clientDataService);

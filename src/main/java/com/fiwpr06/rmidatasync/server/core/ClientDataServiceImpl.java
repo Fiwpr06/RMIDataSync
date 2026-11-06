@@ -27,8 +27,8 @@ public class ClientDataServiceImpl extends UnicastRemoteObject implements IClien
     private final SyncEventDao syncEventDao;
     private final RmiServerManager serverManager;
 
-    public ClientDataServiceImpl(String localNodeId, RecordDao recordDao, UserDao userDao, SyncEventDao syncEventDao, RmiServerManager serverManager) throws RemoteException {
-        super();
+    public ClientDataServiceImpl(String localNodeId, RecordDao recordDao, UserDao userDao, SyncEventDao syncEventDao, RmiServerManager serverManager, int port) throws RemoteException {
+        super(port);
         this.localNodeId = localNodeId;
         this.recordDao = recordDao;
         this.userDao = userDao;

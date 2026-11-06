@@ -28,14 +28,21 @@ public class RmiClientManager {
             this.currentHost = host;
             this.currentPort = port;
 
+            // Set RMI timeout to avoid long hangs on unreachable hosts
+            System.setProperty("sun.rmi.transport.tcp.responseTimeout", "5000");
+            System.setProperty("sun.rmi.transport.tcp.handshakeTimeout", "5000");
+
             Registry registry = LocateRegistry.getRegistry(host, port);
             this.clientService = (IClientDataService) registry.lookup("ClientDataService");
-            this.connected = (clientService != null);
 
+            // Force a real network call to verify the connection is live
+            this.clientService.getNodeInfo();
+
+            this.connected = true;
             LOGGER.info("[CLIENT_NET] Ket noi thanh cong toi Server RMI tai " + host + ":" + port);
             return true;
         } catch (Exception e) {
-            LOGGER.severe("[CLIENT_NET_ERR] Ket noi RMI that bai tai " + host + ":" + port + ": " + e.getMessage());
+            LOGGER.severe("[CLIENT_NET_ERR] Ket noi RMI that bai tai " + host + ":" + port + ": " + e.getClass().getSimpleName() + " - " + e.getMessage());
             this.connected = false;
             this.clientService = null;
             return false;
