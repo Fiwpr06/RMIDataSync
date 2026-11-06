@@ -35,6 +35,17 @@ public class DataSyncServiceImpl extends UnicastRemoteObject implements IDataSyn
     }
 
     @Override
+    public boolean requestPairing(String originNodeId, String originHost, int originPort, String originDbName) throws RemoteException {
+        LOGGER.info(String.format("[PAIRING_IN] Nhan yeu cau ket noi ghep doi tu %s (%s:%d), DB: %s",
+                originNodeId, originHost, originPort, originDbName));
+
+        if (serverManager != null) {
+            return serverManager.handleIncomingPairing(originNodeId, originHost, originPort, originDbName);
+        }
+        return true;
+    }
+
+    @Override
     public boolean replicateRecord(RecordItem record, String originNodeId) throws RemoteException {
         LOGGER.info(String.format("[REPLICATION_IN] Nhan san pham '%s' (ID: %s, v%d) tu %s",
                 record.getTitle(), record.getId(), record.getVersion(), originNodeId));

@@ -13,6 +13,18 @@ import java.util.List;
 public interface IDataSyncService extends Remote {
 
     /**
+     * Yeu cau ghep doi (Pairing Handshake) tu may chu doi tac qua mang LAN.
+     * May chu nhan se hien thi hop thoai thong bao chap nhan (Accept) hoac tu choi (Reject).
+     *
+     * @param originNodeId ID node yeu cau ket noi (e.g. NODE_A)
+     * @param originHost Dia chi IP cong bo cua node yeu cau
+     * @param originPort Cong RMI cua node yeu cau
+     * @param originDbName Ten CSDL (de thong tin)
+     * @return true neu may chu doi tac chap nhan (Accept), false neu tu choi (Reject)
+     */
+    boolean requestPairing(String originNodeId, String originHost, int originPort, String originDbName) throws RemoteException;
+
+    /**
      * Nhan ban sao du lieu tu Server doi tac khi co thao tac Them/Sua
      * @param record Ban ghi can dong bo
      * @param originNodeId ID cua server gui den

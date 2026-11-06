@@ -253,4 +253,25 @@ public class RmiReplicationTest {
         Assertions.assertFalse(itemsAfterReconcileA.stream().anyMatch(r -> r.getId().equals(foundB.getId())), "San pham khong duoc hoi sinh tren Node A");
         Assertions.assertFalse(itemsAfterReconcileB.stream().anyMatch(r -> r.getId().equals(foundB.getId())), "San pham khong duoc hoi sinh tren Node B");
     }
+
+    @Test
+    public void testPairingHandshake() {
+        // 1. Node A gui yeu cau ghep doi sang Node B (mac dinh chap nhan)
+        RmiServerManager.PairingResult result = nodeA.connectAndPairWithPeer("127.0.0.1", PORT_B);
+        Assertions.assertTrue(result.isSuccess(), "Ghep doi mac dinh phai thanh cong: " + result.getMessage());
+        Assertions.assertTrue(nodeA.isPeerConnected(), "Node A phai ket noi thanh cong voi Node B");
+        Assertions.assertTrue(nodeB.isPeerConnected(), "Node B phai nhan dien va ket noi voi Node A");
+
+        // 2. Test tinh huong Node B tu choi (Reject)
+        nodeB.setPairingRequestHandler((originNodeId, originHost, originPort, originDbName) -> false);
+
+        RmiServerManager.PairingResult rejectResult = nodeA.connectAndPairWithPeer("127.0.0.1", PORT_B);
+        Assertions.assertFalse(rejectResult.isSuccess(), "Khi doi tac reject thi ket qua phai la false");
+        Assertions.assertTrue(rejectResult.getMessage().contains("từ chối"), "Thong bao phai chua tu khoa tu choi");
+
+        // Khoi phuc handler mac dinh chap nhan cho cac test tiep theo
+        nodeB.setPairingRequestHandler((originNodeId, originHost, originPort, originDbName) -> true);
+        RmiServerManager.PairingResult reAccepted = nodeA.connectAndPairWithPeer("127.0.0.1", PORT_B);
+        Assertions.assertTrue(reAccepted.isSuccess(), "Khoi phuc chap nhan phai thanh cong");
+    }
 }

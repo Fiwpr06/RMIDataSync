@@ -7,6 +7,7 @@ import com.fiwpr06.rmidatasync.shared.model.SyncEvent;
 import com.fiwpr06.rmidatasync.shared.model.User;
 import com.fiwpr06.rmidatasync.shared.util.AlertHelper;
 import com.fiwpr06.rmidatasync.shared.util.DateTimeUtil;
+import com.fiwpr06.rmidatasync.shared.util.NetworkUtil;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -22,14 +23,19 @@ import javafx.util.Duration;
 
 import java.text.DecimalFormat;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class ServerDashboardController implements RmiServerManager.ServerDashboardListener {
 
     @FXML private Label lblNodeTitle;
-    @FXML private Label lblLocalInfo;
+    @FXML private ComboBox<String> cmbLocalIp;
+    @FXML private Label lblLocalPort;
     @FXML private Label lblPeerInfo;
     @FXML private Label lblPeerBadge;
     @FXML private Label lblCopyFeedback;
+    @FXML private CheckBox chkAutoAccept;
     @FXML private Button btnForceSync;
 
     // Peer Configuration inputs
@@ -87,10 +93,20 @@ public class ServerDashboardController implements RmiServerManager.ServerDashboa
     public void initManager(RmiServerManager manager) {
         this.serverManager = manager;
         this.serverManager.addListener(this);
+        this.serverManager.setPairingRequestHandler(this::handleIncomingPairing);
 
         lblNodeTitle.setText("RMI NODE DASHBOARD - " + manager.getNodeId());
-        lblLocalInfo.setText(manager.getLocalNodeInfo().getHost() + ":" + manager.getLocalPort());
+        lblLocalPort.setText(":" + manager.getLocalPort());
         lblPeerInfo.setText(manager.getPeerHost() + ":" + manager.getPeerPort());
+
+        // Nap danh sach IP mang de nguoi dung tien chon va cong bo
+        List<String> availableIps = NetworkUtil.getAllLocalIpv4Addresses();
+        cmbLocalIp.setItems(FXCollections.observableArrayList(availableIps));
+        if (availableIps.contains(manager.getLocalHost())) {
+            cmbLocalIp.setValue(manager.getLocalHost());
+        } else if (!availableIps.isEmpty()) {
+            cmbLocalIp.setValue(availableIps.get(0));
+        }
 
         if (txtPeerHost != null) txtPeerHost.setText(manager.getPeerHost());
         if (txtPeerPort != null) txtPeerPort.setText(String.valueOf(manager.getPeerPort()));
@@ -149,26 +165,42 @@ public class ServerDashboardController implements RmiServerManager.ServerDashboa
     }
 
     @FXML
-    public void handleCopyLocalAddress() {
-        String addr = lblLocalInfo.getText();
-        if (addr != null && !addr.isEmpty()) {
-            ClipboardContent content = new ClipboardContent();
-            content.putString(addr);
-            Clipboard.getSystemClipboard().setContent(content);
-            showFeedback("✓ Đã sao chép địa chỉ máy chủ: " + addr);
+    public void handleSelectLocalIp() {
+        if (serverManager == null || cmbLocalIp == null) return;
+        String selectedIp = cmbLocalIp.getValue();
+        if (selectedIp != null && !selectedIp.trim().isEmpty() && !selectedIp.equals(serverManager.getLocalHost())) {
+            serverManager.rebindServices(selectedIp);
+            showFeedback("✓ Đã chuyển IP công bố: " + selectedIp);
+            logConsole("[CONFIG] Đã chuyển IP công bố RMI sang: " + selectedIp + ":" + serverManager.getLocalPort());
         }
     }
 
     @FXML
+    public void handleCopyLocalAddress() {
+        String ip = (cmbLocalIp != null && cmbLocalIp.getValue() != null) ? cmbLocalIp.getValue() : serverManager.getLocalHost();
+        int port = (serverManager != null) ? serverManager.getLocalPort() : 1099;
+        String addr = ip + ":" + port;
+
+        ClipboardContent content = new ClipboardContent();
+        content.putString(addr);
+        Clipboard.getSystemClipboard().setContent(content);
+        showFeedback("✓ Đã sao chép: " + addr);
+    }
+
+    @FXML
     public void handleSetPeerPresetA() {
-        if (txtPeerHost != null) txtPeerHost.setText("127.0.0.1");
+        if (txtPeerHost != null && (txtPeerHost.getText().trim().isEmpty() || txtPeerHost.getText().trim().equals("127.0.0.1"))) {
+            txtPeerHost.setText("127.0.0.1");
+        }
         if (txtPeerPort != null) txtPeerPort.setText("1099");
         showFeedback("Đã chọn cấu hình đối tác: Cổng 1099");
     }
 
     @FXML
     public void handleSetPeerPresetB() {
-        if (txtPeerHost != null) txtPeerHost.setText("127.0.0.1");
+        if (txtPeerHost != null && (txtPeerHost.getText().trim().isEmpty() || txtPeerHost.getText().trim().equals("127.0.0.1"))) {
+            txtPeerHost.setText("127.0.0.1");
+        }
         if (txtPeerPort != null) txtPeerPort.setText("1100");
         showFeedback("Đã chọn cấu hình đối tác: Cổng 1100");
     }
@@ -185,10 +217,86 @@ public class ServerDashboardController implements RmiServerManager.ServerDashboa
             return;
         }
 
-        serverManager.updatePeerConfig(host, port);
-        lblPeerInfo.setText(host + ":" + port);
-        showFeedback("✓ Đã kết nối lại đối tác: " + host + ":" + port);
-        logConsole("[CONFIG] Đã cập nhật máy đối tác: " + host + ":" + port + ". Đang kết nối...");
+        if (btnUpdatePeer != null) btnUpdatePeer.setDisable(true);
+        showFeedback("Đang gửi yêu cầu ghép đôi tới " + host + ":" + port + "...");
+        logConsole("[CONFIG] Đang gửi yêu cầu ghép đôi tới máy đối tác: " + host + ":" + port + "...");
+
+        new Thread(() -> {
+            RmiServerManager.PairingResult result = serverManager.connectAndPairWithPeer(host, port);
+            Platform.runLater(() -> {
+                if (btnUpdatePeer != null) btnUpdatePeer.setDisable(false);
+                if (result.isSuccess()) {
+                    lblPeerInfo.setText(host + ":" + port);
+                    showFeedback("✓ " + result.getMessage());
+                    logConsole("[PAIRING] " + result.getMessage());
+                    AlertHelper.showInfo("Ghép đôi thành công", result.getMessage());
+                } else {
+                    showFeedback("Ghép đôi thất bại: " + result.getMessage());
+                    logConsole("[PAIRING_ERR] " + result.getMessage());
+                    AlertHelper.showWarning("Ghép đôi không thành công", result.getMessage());
+                }
+            });
+        }).start();
+    }
+
+    /**
+     * Xu ly yeu cau ghep doi tu Server doi tac gui den node nay qua mang LAN.
+     * Hien thi hop thoai thong bao xac nhan Accept/Reject hoac tu dong chap nhan.
+     */
+    private boolean handleIncomingPairing(String originNodeId, String originHost, int originPort, String originDbName) {
+        // Truong hop 1: Nguoi dung bat tuy chon "Tu dong chap nhan"
+        if (chkAutoAccept != null && chkAutoAccept.isSelected()) {
+            Platform.runLater(() -> {
+                if (txtPeerHost != null) txtPeerHost.setText(originHost);
+                if (txtPeerPort != null) txtPeerPort.setText(String.valueOf(originPort));
+                if (lblPeerInfo != null) lblPeerInfo.setText(originHost + ":" + originPort);
+                showFeedback("✓ Tự động chấp nhận kết nối từ " + originNodeId);
+                logConsole("[PAIRING] Tự động chấp nhận ghép đôi từ " + originNodeId + " (" + originHost + ":" + originPort + ")");
+            });
+            return true;
+        }
+
+        // Truong hop 2: Hien thi hop thoai xac nhan tuong tac cho nguoi dung (Interactive Accept/Reject Dialog)
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                alert.setTitle("Yêu cầu kết nối & ghép đôi máy chủ");
+                alert.setHeaderText("Máy chủ đối tác yêu cầu kết nối!");
+                alert.setContentText(String.format(
+                        "Máy chủ: %s\nĐịa chỉ: %s:%d\nCSDL đối tác: %s\n\nBạn có đồng ý CHẤP NHẬN (Accept) kết nối và đồng bộ dữ liệu hai chiều với máy chủ này không?",
+                        originNodeId, originHost, originPort, originDbName
+                ));
+
+                ButtonType btnAccept = new ButtonType("Chấp nhận (Accept)", ButtonBar.ButtonData.OK_DONE);
+                ButtonType btnReject = new ButtonType("Từ chối (Reject)", ButtonBar.ButtonData.CANCEL_CLOSE);
+                alert.getButtonTypes().setAll(btnAccept, btnReject);
+
+                Optional<ButtonType> result = alert.showAndWait();
+                if (result.isPresent() && result.get() == btnAccept) {
+                    if (txtPeerHost != null) txtPeerHost.setText(originHost);
+                    if (txtPeerPort != null) txtPeerPort.setText(String.valueOf(originPort));
+                    if (lblPeerInfo != null) lblPeerInfo.setText(originHost + ":" + originPort);
+                    showFeedback("✓ Đã chấp nhận kết nối từ " + originNodeId);
+                    logConsole("[PAIRING] Đã chấp nhận kết nối ghép đôi từ " + originNodeId + " (" + originHost + ":" + originPort + ")");
+                    future.complete(true);
+                } else {
+                    showFeedback("Đã từ chối kết nối từ " + originNodeId);
+                    logConsole("[PAIRING] Đã từ chối kết nối từ " + originNodeId);
+                    future.complete(false);
+                }
+            } catch (Exception e) {
+                future.complete(false);
+            }
+        });
+
+        try {
+            // Cho phan hoi tu giao dien toi da 30 giay
+            return future.get(30, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            logConsole("[PAIRING] Yêu cầu kết nối từ " + originNodeId + " hết thời gian chờ (Timeout).");
+            return false;
+        }
     }
 
     @FXML
@@ -290,7 +398,7 @@ public class ServerDashboardController implements RmiServerManager.ServerDashboa
     @Override
     public void onServerStarted(NodeInfo localNode) {
         Platform.runLater(() -> {
-            logConsole("[SYSTEM] Node " + localNode.getNodeId() + " da khoi dong tren port " + localNode.getPort());
+            logConsole("[SYSTEM] Node " + localNode.getNodeId() + " da khoi dong tren " + localNode.getHost() + ":" + localNode.getPort());
         });
     }
 
@@ -310,7 +418,7 @@ public class ServerDashboardController implements RmiServerManager.ServerDashboa
                 logConsole("[HEARTBEAT] Máy chủ đối tác (" + peerHost + ":" + peerPort + ") đã kết nối.");
             } else {
                 lblPeerBadge.setText("● Đang chờ máy đối tác");
-                lblPeerBadge.setStyle("-fx-text-fill: #DC2626; -fx-background-color: #FEE2E2; -fx-padding: 5px 12px; -fx-background-radius: 12px; -fx-font-weight: bold;");
+                lblPeerBadge.setStyle("-fx-text-fill: #DC2626; -fx-background-radius: 12px; -fx-background-color: #FEE2E2; -fx-padding: 5px 12px; -fx-font-weight: bold;");
                 logConsole("[HEARTBEAT] Máy chủ đối tác (" + peerHost + ":" + peerPort + ") mất kết nối.");
             }
         });
