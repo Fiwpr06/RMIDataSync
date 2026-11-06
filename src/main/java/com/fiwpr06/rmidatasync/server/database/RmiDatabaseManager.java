@@ -60,6 +60,7 @@ public class RmiDatabaseManager {
                 try { stmt.executeUpdate("ALTER TABLE `records` ADD COLUMN `price` DOUBLE DEFAULT 0;"); } catch (Exception ignored) {}
                 try { stmt.executeUpdate("ALTER TABLE `records` ADD COLUMN `quantity` INT DEFAULT 0;"); } catch (Exception ignored) {}
                 try { stmt.executeUpdate("ALTER TABLE `records` ADD COLUMN `status` VARCHAR(50) DEFAULT 'Còn hàng';"); } catch (Exception ignored) {}
+                try { stmt.executeUpdate("ALTER TABLE `records` ADD COLUMN `is_deleted` TINYINT DEFAULT 0;"); } catch (Exception ignored) {}
 
                 // Bang users (Bao gom kiem soat phien online phan tan)
                 String createUsersTable = "CREATE TABLE IF NOT EXISTS `users` (" +

@@ -81,6 +81,20 @@ public class RmiClientManager {
         }
     }
 
+    public synchronized boolean updatePassword(String newPassword) {
+        if (!connected || clientService == null || loggedInUser == null) return false;
+        try {
+            boolean ok = clientService.updatePassword(loggedInUser, newPassword);
+            if (ok) {
+                this.loggedInPassword = newPassword;
+            }
+            return ok;
+        } catch (Exception e) {
+            LOGGER.severe("[CLIENT_NET_ERR] Loi updatePassword: " + e.getMessage());
+            return false;
+        }
+    }
+
     public synchronized List<RecordItem> getAllRecords() {
         if (!connected || clientService == null) return new ArrayList<>();
         try {

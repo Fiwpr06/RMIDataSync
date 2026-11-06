@@ -19,27 +19,39 @@ public final class NetworkUtil {
             Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
             while (interfaces.hasMoreElements()) {
                 NetworkInterface iface = interfaces.nextElement();
-                if (iface.isLoopback() || !iface.isUp()) continue;
+                if (iface.isLoopback() || !iface.isUp() || iface.isVirtual()) continue;
+
+                String name = iface.getName().toLowerCase();
+                String display = iface.getDisplayName().toLowerCase();
+                if (name.contains("wsl") || name.contains("virtual") || name.contains("vmnet") || name.contains("vethernet")
+                        || display.contains("wsl") || display.contains("virtual") || display.contains("hyper-v") || display.contains("pseudo")) {
+                    continue;
+                }
 
                 Enumeration<InetAddress> addresses = iface.getInetAddresses();
                 while (addresses.hasMoreElements()) {
                     InetAddress addr = addresses.nextElement();
-                    if (addr instanceof Inet4Address && !addr.isLoopbackAddress()) {
+                    if (addr instanceof Inet4Address && !addr.isLoopbackAddress() && !addr.isLinkLocalAddress()) {
                         return addr.getHostAddress();
                     }
                 }
             }
-            return InetAddress.getLocalHost().getHostAddress();
+            return "127.0.0.1";
         } catch (Exception e) {
             return "127.0.0.1";
         }
     }
 
     /**
-     * Thiet lap hostname cho Java RMI stub de cac may ao (VMware/VirtualBox) va may that khac co the goi nguoc lai
+     * Thiet lap hostname cho Java RMI stub de dam bao client va peer co the ket noi
      */
     public static void setupRmiHostname(String ip) {
-        String targetIp = (ip != null && !ip.isEmpty() && !ip.equals("127.0.0.1") && !ip.equals("0.0.0.0")) ? ip : getLocalIpAddress();
+        String targetIp;
+        if (ip != null && !ip.trim().isEmpty() && !ip.equals("0.0.0.0")) {
+            targetIp = ip.trim();
+        } else {
+            targetIp = "127.0.0.1";
+        }
         System.setProperty("java.rmi.server.hostname", targetIp);
         LOGGER.info("[RMI] Set java.rmi.server.hostname = " + targetIp);
     }

@@ -29,7 +29,7 @@
         <Button onAction="#handleSetPeerPresetA" text="Cổng 1099" styleClass="btn-pill" />
         <Button onAction="#handleSetPeerPresetB" text="Cổng 1100" styleClass="btn-pill" />
         <Button fx:id="btnUpdatePeer" onAction="#handleUpdatePeer" text="Áp dụng" styleClass="btn-primary" />
-        <Button fx:id="btnForceSync" disable="true" onAction="#handleForceReconcile" text="Đồng bộ bù" styleClass="btn-action" />
+        <Button fx:id="btnForceSync" onAction="#handleForceReconcile" text="Đồng bộ bù" styleClass="btn-action" />
         <Label fx:id="lblCopyFeedback" text="" styleClass="feedback-toast" />
         <Region HBox.hgrow="ALWAYS" />
         <Button onAction="#handleRefreshAll" text="Làm mới" styleClass="btn-secondary" />

@@ -10,6 +10,7 @@
         <Label text="RMIDATA SYNC" style="-fx-font-weight: bold; -fx-text-fill: #1E3A8A; -fx-font-size: 15px;" />
         <Separator orientation="VERTICAL" />
         <Label fx:id="lblCurrentUser" text="Người dùng: Guest" style="-fx-font-weight: bold; -fx-text-fill: #334155;" />
+        <Button text="Đổi mật khẩu" onAction="#handleOpenChangePasswordDialog" styleClass="btn-pill" />
         <Separator orientation="VERTICAL" />
         <Label fx:id="lblCurrentServer" text="Máy chủ: Node A" styleClass="field-label" />
         <Label fx:id="lblNodeStatus" text="● Đã kết nối" style="-fx-text-fill: #15803D; -fx-font-weight: bold; -fx-background-color: #DCFCE7; -fx-padding: 3px 10px; -fx-background-radius: 12px;" />

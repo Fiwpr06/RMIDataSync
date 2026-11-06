@@ -34,6 +34,11 @@ public interface IClientDataService extends Remote {
     boolean register(String username, String password, String fullName) throws RemoteException;
 
     /**
+     * Doi mat khau va dong bo sang 2 Server
+     */
+    boolean updatePassword(String username, String newPassword) throws RemoteException;
+
+    /**
      * Lay danh sach tat ca ban ghi san pham
      */
     List<RecordItem> getAllRecords() throws RemoteException;

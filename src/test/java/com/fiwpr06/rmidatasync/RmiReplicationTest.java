@@ -201,5 +201,56 @@ public class RmiReplicationTest {
 
         Assertions.assertTrue(foundOnA, "Node A phai co user tao tu Node B");
         Assertions.assertTrue(foundOnB, "Node B phai co user tao tu Node A");
+
+        // 4. Test doi mat khau tren Node A -> Phai dong bo sang Node B
+        boolean passUpdated = clientServiceA.updatePassword(usernameA, "NewPass@789");
+        Assertions.assertTrue(passUpdated, "Doi mat khau tren Node A phai thanh cong");
+        Thread.sleep(1000);
+
+        String loginNewPassB = clientServiceB.loginDetailed(usernameA, "NewPass@789");
+        Assertions.assertEquals("SUCCESS", loginNewPassB, "Node B phai dang nhap duoc voi mat khau moi da dong bo tu Node A!");
+        clientServiceB.logout(usernameA);
+    }
+
+    @Test
+    public void testDeleteRecordReplicationAndNoResurrect() throws Exception {
+        Registry regA = LocateRegistry.getRegistry("127.0.0.1", PORT_A);
+        IClientDataService clientServiceA = (IClientDataService) regA.lookup("ClientDataService");
+
+        Registry regB = LocateRegistry.getRegistry("127.0.0.1", PORT_B);
+        IClientDataService clientServiceB = (IClientDataService) regB.lookup("ClientDataService");
+
+        // 1. Tao san pham moi de test xoa
+        RecordItem item = new RecordItem();
+        item.setTitle("San pham test xoa phan tan");
+        item.setCategory("Test");
+        item.setPrice(500000);
+        item.setQuantity(5);
+        item.setStatus("Còn hàng");
+
+        clientServiceA.createRecord(item);
+        Thread.sleep(1000);
+
+        List<RecordItem> itemsB = clientServiceB.getAllRecords();
+        RecordItem foundB = itemsB.stream().filter(r -> r.getTitle().equals("San pham test xoa phan tan")).findFirst().orElse(null);
+        Assertions.assertNotNull(foundB, "San pham phai co tren Node B");
+
+        // 2. Xoa san pham tren Node A -> Node B phai bi xoa
+        boolean deleted = clientServiceA.deleteRecord(foundB.getId());
+        Assertions.assertTrue(deleted, "Xoa tren Node A phai thanh cong");
+        Thread.sleep(1000);
+
+        List<RecordItem> itemsAfterDeleteB = clientServiceB.getAllRecords();
+        boolean stillOnB = itemsAfterDeleteB.stream().anyMatch(r -> r.getId().equals(foundB.getId()));
+        Assertions.assertFalse(stillOnB, "Node B phai khong con san pham sau khi da bi xoa tren Node A");
+
+        // 3. Reconcile giua 2 server -> San pham khong duoc phep hoi sinh!
+        nodeA.reconcileWithPeer();
+        Thread.sleep(1500);
+
+        List<RecordItem> itemsAfterReconcileA = clientServiceA.getAllRecords();
+        List<RecordItem> itemsAfterReconcileB = clientServiceB.getAllRecords();
+        Assertions.assertFalse(itemsAfterReconcileA.stream().anyMatch(r -> r.getId().equals(foundB.getId())), "San pham khong duoc hoi sinh tren Node A");
+        Assertions.assertFalse(itemsAfterReconcileB.stream().anyMatch(r -> r.getId().equals(foundB.getId())), "San pham khong duoc hoi sinh tren Node B");
     }
 }

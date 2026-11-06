@@ -56,6 +56,9 @@ public class DataSyncServiceImpl extends UnicastRemoteObject implements IDataSyn
         LOGGER.info(String.format("[REPLICATION_IN] Nhan yeu cau xoa san pham ID '%s' tu %s", recordId, originNodeId));
 
         boolean deleted = recordDao.delete(recordId);
+        if (deleted) {
+            recordDao.markSynced(recordId);
+        }
         syncEventDao.logEvent(SyncAction.DELETE, recordId, "Deleted Record", originNodeId, localNodeId, deleted ? "SUCCESS" : "FAILED");
         if (deleted) {
             serverManager.notifyDataChanged();

@@ -96,6 +96,23 @@ public class ClientDataServiceImpl extends UnicastRemoteObject implements IClien
     }
 
     @Override
+    public boolean updatePassword(String username, String newPassword) throws RemoteException {
+        LOGGER.info("[CLIENT_RMI] Yeu cau doi mat khau cho user: " + username);
+        User user = userDao.getByUsername(username);
+        if (user == null) {
+            return false;
+        }
+        user.setPassword(newPassword);
+        boolean ok = userDao.updateUser(user);
+        if (ok) {
+            syncEventDao.logEvent(SyncAction.UPDATE, "USER:" + username, user.getFullName(), localNodeId, "LOCAL_DB", "PASSWORD_CHANGED");
+            serverManager.replicateUserToPeer(user);
+            serverManager.notifyDataChanged();
+        }
+        return ok;
+    }
+
+    @Override
     public List<User> getAllUsers() throws RemoteException {
         return userDao.getAllUsers();
     }

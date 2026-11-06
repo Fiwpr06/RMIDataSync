@@ -21,6 +21,7 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.List;
+import java.util.Optional;
 
 public class ClientMainController {
 
@@ -332,6 +333,34 @@ public class ClientMainController {
     }
 
     // ================= CHUYEN MAY CHU & DANG XUAT =================
+
+    @FXML
+    public void handleOpenChangePasswordDialog() {
+        if (clientManager == null || clientManager.getLoggedInUser() == null) return;
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Đổi mật khẩu tài khoản");
+        dialog.setHeaderText("Đổi mật khẩu cho: " + clientManager.getLoggedInUser());
+        dialog.setContentText("Nhập mật khẩu mới:");
+
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(newPass -> {
+            String pass = newPass.trim();
+            if (pass.isEmpty()) {
+                AlertHelper.showWarning("Cảnh báo", "Mật khẩu mới không được để trống!");
+                return;
+            }
+            new Thread(() -> {
+                boolean ok = clientManager.updatePassword(pass);
+                Platform.runLater(() -> {
+                    if (ok) {
+                        AlertHelper.showInfo("Thành công", "Đã cập nhật mật khẩu mới và đồng bộ sang 2 Server thành công!");
+                    } else {
+                        AlertHelper.showError("Thất bại", "Không thể cập nhật mật khẩu trên Server.");
+                    }
+                });
+            }).start();
+        });
+    }
 
     @FXML
     public void switchToNodeA() {

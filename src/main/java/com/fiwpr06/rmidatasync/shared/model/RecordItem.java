@@ -21,14 +21,20 @@ public class RecordItem implements Serializable {
     private String updatedBy;
     private String originNode; // Node A hoac Node B (nguon goc ban ghi)
     private boolean synced;
+    private boolean deleted = false;
 
     public RecordItem() {
         this.status = "Còn hàng";
         this.version = 1;
         this.synced = true;
+        this.deleted = false;
     }
 
     public RecordItem(String id, String title, String category, double price, int quantity, String status, String content, int version, long lastModified, String updatedBy, String originNode, boolean synced) {
+        this(id, title, category, price, quantity, status, content, version, lastModified, updatedBy, originNode, synced, false);
+    }
+
+    public RecordItem(String id, String title, String category, double price, int quantity, String status, String content, int version, long lastModified, String updatedBy, String originNode, boolean synced, boolean deleted) {
         this.id = id;
         this.title = title;
         this.category = category;
@@ -41,6 +47,7 @@ public class RecordItem implements Serializable {
         this.updatedBy = updatedBy;
         this.originNode = originNode;
         this.synced = synced;
+        this.deleted = deleted;
     }
 
     public String getId() { return id; }
@@ -78,6 +85,9 @@ public class RecordItem implements Serializable {
 
     public boolean isSynced() { return synced; }
     public void setSynced(boolean synced) { this.synced = synced; }
+
+    public boolean isDeleted() { return deleted; }
+    public void setDeleted(boolean deleted) { this.deleted = deleted; }
 
     @Override
     public boolean equals(Object o) {

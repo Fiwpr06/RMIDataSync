@@ -93,7 +93,10 @@ public class RmiServerManager {
 
         try {
             // 2. Thiet lap hostname cho RMI de ho tro may that & may ao
-            String localIp = NetworkUtil.getLocalIpAddress();
+            String localIp = "127.0.0.1";
+            if (peerHost != null && !peerHost.equals("127.0.0.1") && !peerHost.equals("localhost")) {
+                localIp = NetworkUtil.getLocalIpAddress();
+            }
             NetworkUtil.setupRmiHostname(localIp);
 
             // 3. Khoi tao Registry
@@ -131,6 +134,11 @@ public class RmiServerManager {
     public synchronized void updatePeerConfig(String newHost, int newPort) {
         this.peerHost = newHost != null ? newHost.trim() : "127.0.0.1";
         this.peerPort = newPort;
+        if (!peerHost.equals("127.0.0.1") && !peerHost.equals("localhost")) {
+            NetworkUtil.setupRmiHostname(NetworkUtil.getLocalIpAddress());
+        } else {
+            NetworkUtil.setupRmiHostname("127.0.0.1");
+        }
         LOGGER.info("[RMI_MGR] Cap nhat cau hinh Peer Server: " + peerHost + ":" + peerPort);
         if (asyncTaskPool != null) {
             asyncTaskPool.submit(() -> {

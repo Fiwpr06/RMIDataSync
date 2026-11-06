@@ -194,9 +194,21 @@ public class ServerDashboardController implements RmiServerManager.ServerDashboa
     @FXML
     public void handleForceReconcile() {
         if (serverManager != null) {
-            serverManager.reconcileWithPeer();
-            showFeedback("✓ Đã kích hoạt đồng bộ bù dữ liệu");
-            logConsole("[RECONCILE] Người dùng kích hoạt đồng bộ bù dữ liệu...");
+            new Thread(() -> {
+                boolean alive = serverManager.checkPeerAlive();
+                if (alive) {
+                    serverManager.reconcileWithPeer();
+                    Platform.runLater(() -> {
+                        showFeedback("✓ Đang tiến hành đồng bộ bù dữ liệu & tài khoản...");
+                        logConsole("[ACTION] Yêu cầu đồng bộ bù dữ liệu và tài khoản với đối tác thành công!");
+                    });
+                } else {
+                    Platform.runLater(() -> {
+                        showFeedback("Máy đối tác chưa trực tuyến!");
+                        logConsole("[ACTION] Không thể kết nối đối tác tại " + serverManager.getPeerHost() + ":" + serverManager.getPeerPort());
+                    });
+                }
+            }).start();
         }
     }
 
@@ -295,12 +307,10 @@ public class ServerDashboardController implements RmiServerManager.ServerDashboa
             if (online) {
                 lblPeerBadge.setText("● Đã kết nối đối tác (" + peerHost + ":" + peerPort + ")");
                 lblPeerBadge.setStyle("-fx-text-fill: #15803D; -fx-background-color: #DCFCE7; -fx-padding: 5px 12px; -fx-background-radius: 12px; -fx-font-weight: bold;");
-                btnForceSync.setDisable(false);
                 logConsole("[HEARTBEAT] Máy chủ đối tác (" + peerHost + ":" + peerPort + ") đã kết nối.");
             } else {
                 lblPeerBadge.setText("● Đang chờ máy đối tác");
                 lblPeerBadge.setStyle("-fx-text-fill: #DC2626; -fx-background-color: #FEE2E2; -fx-padding: 5px 12px; -fx-background-radius: 12px; -fx-font-weight: bold;");
-                btnForceSync.setDisable(true);
                 logConsole("[HEARTBEAT] Máy chủ đối tác (" + peerHost + ":" + peerPort + ") mất kết nối.");
             }
         });

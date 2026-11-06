@@ -69,7 +69,8 @@ public class UserDao {
     public boolean saveOrUpdate(User user) {
         String sql = "INSERT INTO users (username, password, full_name, role, is_online, current_node, last_login_time) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?) " +
-                "ON DUPLICATE KEY UPDATE password = VALUES(password), full_name = VALUES(full_name), role = VALUES(role)";
+                "ON DUPLICATE KEY UPDATE password = VALUES(password), full_name = VALUES(full_name), role = VALUES(role), " +
+                "is_online = VALUES(is_online), current_node = VALUES(current_node), last_login_time = VALUES(last_login_time)";
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, user.getUsername());
@@ -79,7 +80,8 @@ public class UserDao {
             ps.setBoolean(5, user.isOnline());
             ps.setString(6, user.getCurrentNode());
             ps.setLong(7, user.getLastLoginTime());
-            return ps.executeUpdate() > 0;
+            int rows = ps.executeUpdate();
+            return rows >= 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
